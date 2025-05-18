@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.Admin.BadgeManagementPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:LanguageLearningApp.ViewModels.Admin"
+    x:Name="ThisPage">
+
+    <ContentPage.BindingContext>
+        <vm:AdminBadgeViewModel />
+    </ContentPage.BindingContext>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="Quản lý Badge/Reward" FontAttributes="Bold" FontSize="24" HorizontalOptions="Center"/>
+            <Label Text="Tên badge" />
+            <Entry Text="{Binding SelectedBadge.Name}" Placeholder="Nhập tên badge" />
+            <Label Text="Mô tả" />
+            <Editor Text="{Binding SelectedBadge.Description}" Placeholder="Nhập mô tả" AutoSize="TextChanges" HeightRequest="60"/>
+            <Label Text="URL Icon" />
+            <Entry Text="{Binding SelectedBadge.IconUrl}" Placeholder="https://icon.com/image.png" />
+            <Label Text="Điểm/cột mốc cần đạt" />
+            <Entry Text="{Binding SelectedBadge.RequiredPoints}" Keyboard="Numeric" Placeholder="Số điểm/cột mốc" />
+
+            <Button Text="Thêm/Sửa badge" Command="{Binding AddOrUpdateBadgeCommand}" />
+
+            <Label Text="{Binding ErrorMessage}" TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}" />
+
+            <Label Text="Danh sách badge" FontAttributes="Bold" FontSize="18" Margin="0,10,0,0"/>
+            <CollectionView ItemsSource="{Binding Badges}" HeightRequest="400">
+                <CollectionView.EmptyView>
+                    <Label Text="Chưa có badge nào." HorizontalOptions="Center" VerticalOptions="Center"/>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Sửa"
+                                               BackgroundColor="Orange"
+                                               Command="{Binding BindingContext.EditBadgeCommand, Source={x:Reference ThisPage}}"
+                                               CommandParameter="{Binding .}" />
+                                    <SwipeItem Text="Xoá"
+                                               BackgroundColor="Red"
+                                               Command="{Binding BindingContext.DeleteBadgeCommand, Source={x:Reference ThisPage}}"
+                                               CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            <Grid Padding="8" Margin="0,0,0,6" BackgroundColor="White">
+                                <HorizontalStackLayout>
+                                    <Image Source="{Binding IconUrl}" HeightRequest="40" WidthRequest="40"/>
+                                    <VerticalStackLayout Padding="8,0,0,0">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold"/>
+                                        <Label Text="{Binding Description}" LineBreakMode="TailTruncation" FontSize="12"/>
+                                        <Label Text="Cột mốc: {Binding RequiredPoints}" FontSize="12" TextColor="Gray"/>
+                                    </VerticalStackLayout>
+                                </HorizontalStackLayout>
+                            </Grid>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

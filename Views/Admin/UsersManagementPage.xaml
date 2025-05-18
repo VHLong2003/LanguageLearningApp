@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.Admin.UsersManagementPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:LanguageLearningApp.ViewModels.Admin"
+    x:Name="ThisPage"
+    BackgroundColor="#f6f6f6">
+
+    <ContentPage.BindingContext>
+        <vm:AdminUserViewModel />
+    </ContentPage.BindingContext>
+
+    <VerticalStackLayout Padding="20" Spacing="18">
+        <Label Text="Quản lý Người dùng"
+               FontAttributes="Bold"
+               FontSize="26"
+               HorizontalOptions="Center"
+               TextColor="#222" />
+
+        <!-- Search bar + button, modern style -->
+        <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,8">
+            <Entry x:Name="SearchEntry"
+                   Placeholder="Nhập tên, email..."
+                   Text="{Binding SearchText}"
+                   HeightRequest="44"
+                   BackgroundColor="White"
+                   Margin="0,0,10,0"
+                   VerticalOptions="Center"
+                   ClearButtonVisibility="WhileEditing"
+                   FontSize="16"
+                   />
+            <Button Text="Tìm"
+                    Command="{Binding SearchUsersCommand}"
+                    Grid.Column="1"
+                    HeightRequest="44"
+                    BackgroundColor="#3A7BD5"
+                    TextColor="White"
+                    CornerRadius="12"
+                    />
+        </Grid>
+
+        <!-- Loading -->
+        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                           IsVisible="{Binding IsBusy}"
+                           Color="#3A7BD5"
+                           HeightRequest="32"/>
+
+        <!-- Error -->
+        <Label Text="{Binding ErrorMessage}"
+               TextColor="Red"
+               FontAttributes="Italic"
+               FontSize="14"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}" />
+
+        <!-- List -->
+        <CollectionView ItemsSource="{Binding Users}"
+                        Margin="0,8,0,0"
+                        HeightRequest="520"
+                        x:Name="UsersCollection">
+            <CollectionView.EmptyView>
+                <Label Text="Chưa có người dùng nào."
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       FontAttributes="Italic"
+                       TextColor="#666"/>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <SwipeView>
+                        <SwipeView.RightItems>
+                            <SwipeItems>
+                                <SwipeItem Text="Xoá"
+                                           BackgroundColor="#FF3B30"
+                                           Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.DeleteUserCommand}"
+                                           CommandParameter="{Binding .}" 
+                                           IconImageSource="delete_icon.png"/>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+                        <Frame Padding="12"
+                               Margin="0,0,0,10"
+                               CornerRadius="16"
+                               HasShadow="True"
+                               BackgroundColor="White">
+                            <Grid ColumnDefinitions="60,*,Auto" VerticalOptions="Center">
+                                <!-- Avatar -->
+                                <Image Source="{Binding AvatarUrl}"
+                                       WidthRequest="48"
+                                       HeightRequest="48"
+                                       Aspect="AspectFill" />
+                                <!-- Info -->
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" Padding="10,0">
+                                    <Label Text="{Binding FullName}" FontAttributes="Bold" FontSize="17" TextColor="#222"/>
+                                    <Label Text="{Binding Email}" FontSize="13" TextColor="#666"/>
+                                    <Label Text="{Binding Role}" FontSize="13" TextColor="#3A7BD5" />
+                                    <Label Text="{Binding Points, StringFormat='Điểm: {0}'}" FontSize="13" TextColor="#34C759"/>
+                                </VerticalStackLayout>
+                                <!-- Badge icon, nếu cần -->
+                                <!--<Image Grid.Column="2" Source="star_icon.png" HeightRequest="24" WidthRequest="24" VerticalOptions="Center" IsVisible="{Binding IsAdmin}" />-->
+                            </Grid>
+                        </Frame>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </VerticalStackLayout>
+</ContentPage>

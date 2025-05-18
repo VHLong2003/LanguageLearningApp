@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="LanguageLearningApp.Views.Admin.AdminDashboardPage">
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="32">
+            <Label Text="Bảng Điều Khiển Admin" FontAttributes="Bold" FontSize="32" HorizontalOptions="Center"/>
+            <Button Text="Quản lý Users" Clicked="ManageUsers_Clicked"/>
+            <Button Text="Quản lý Khóa Học" Clicked="ManageCourses_Clicked"/>
+            <!-- Các chức năng admin khác -->
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

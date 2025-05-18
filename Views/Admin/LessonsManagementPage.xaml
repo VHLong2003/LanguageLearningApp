@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.Admin.LessonsManagementPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:LanguageLearningApp.ViewModels.Admin"
+    x:Name="ThisPage">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="Quản lý Bài học" FontAttributes="Bold" FontSize="24" HorizontalOptions="Center"/>
+            <Label Text="Tiêu đề" />
+            <Entry Text="{Binding SelectedLesson.Title}" Placeholder="Tiêu đề bài học" />
+            <Label Text="Nội dung" />
+            <Editor Text="{Binding SelectedLesson.Content}" Placeholder="Nội dung bài học" AutoSize="TextChanges" HeightRequest="60"/>
+            <Label Text="Thứ tự (Order)" />
+            <Entry Text="{Binding SelectedLesson.Order}" Keyboard="Numeric" Placeholder="Vị trí hiển thị" />
+            <Label Text="Điểm mở khoá" />
+            <Entry Text="{Binding SelectedLesson.RequiredPointsToUnlock}" Keyboard="Numeric" Placeholder="Điểm cần để unlock" />
+            <Button Text="Thêm/Sửa bài học" Command="{Binding AddOrUpdateLessonCommand}" />
+
+            <Label Text="{Binding ErrorMessage}" TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}" />
+
+            <Label Text="Danh sách bài học" FontAttributes="Bold" FontSize="18" Margin="0,10,0,0"/>
+            <CollectionView ItemsSource="{Binding Lessons}" HeightRequest="400"
+                            SelectionMode="Single"
+                            SelectionChanged="CollectionView_SelectionChanged">
+                <CollectionView.EmptyView>
+                    <Label Text="Chưa có bài học nào." HorizontalOptions="Center" VerticalOptions="Center"/>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Sửa"
+                                               BackgroundColor="Orange"
+                                               Command="{Binding BindingContext.EditLessonCommand, Source={x:Reference ThisPage}}"
+                                               CommandParameter="{Binding .}" />
+                                    <SwipeItem Text="Xoá"
+                                               BackgroundColor="Red"
+                                               Command="{Binding BindingContext.DeleteLessonCommand, Source={x:Reference ThisPage}}"
+                                               CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            <Grid Padding="8" Margin="0,0,0,6" BackgroundColor="White">
+                                <VerticalStackLayout>
+                                    <Label Text="{Binding Title}" FontAttributes="Bold"/>
+                                    <Label Text="{Binding Content}" LineBreakMode="TailTruncation" FontSize="12"/>
+                                    <Label Text="Thứ tự: {Binding Order}, Unlock: {Binding RequiredPointsToUnlock} điểm"
+                                           FontSize="12" TextColor="Gray"/>
+                                    <Button Text="Quản lý câu hỏi"
+                                            Command="{Binding BindingContext.SelectLessonCommand, Source={x:Reference ThisPage}}"
+                                            CommandParameter="{Binding .}" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+

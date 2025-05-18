@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:LanguageLearningApp.Views.User"
+       x:Class="LanguageLearningApp.AppShell">
+
+    <FlyoutItem Title="Courses" Icon="courses.png">
+        <ShellContent ContentTemplate="{DataTemplate views:CoursesView}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Leaderboard" Icon="leaderboard.png">
+        <ShellContent ContentTemplate="{DataTemplate views:LeaderboardView}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Shop" Icon="shop.png">
+        <ShellContent ContentTemplate="{DataTemplate views:ShopView}" />
+    </FlyoutItem>
+
+    <TabBar>
+        <ShellContent Title="Profile" Icon="profile.png" ContentTemplate="{DataTemplate views:ProfileView}" />
+    </TabBar>
+
+</Shell>

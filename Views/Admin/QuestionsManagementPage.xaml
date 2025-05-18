@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.Admin.QuestionsManagementPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:LanguageLearningApp.ViewModels.Admin"
+    xmlns:models="clr-namespace:LanguageLearningApp.Models"
+    x:Name="ThisPage">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="Quản lý Câu hỏi" FontAttributes="Bold" FontSize="24" HorizontalOptions="Center"/>
+            <Label Text="Nội dung câu hỏi" />
+            <Entry Text="{Binding SelectedQuestion.Content}" Placeholder="Nhập câu hỏi" />
+
+            <Label Text="Loại câu hỏi" />
+            <Picker SelectedItem="{Binding SelectedQuestionType, Mode=TwoWay}" Title="Chọn loại">
+                <Picker.ItemsSource>
+                    <x:Array Type="{x:Type models:QuestionType}">
+                        <models:QuestionType>MultipleChoice</models:QuestionType>
+                        <models:QuestionType>FillInTheBlank</models:QuestionType>
+                        <models:QuestionType>DragAndDrop</models:QuestionType>
+                        <models:QuestionType>TrueFalse</models:QuestionType>
+                    </x:Array>
+                </Picker.ItemsSource>
+            </Picker>
+
+            <!-- MultipleChoice -->
+            <StackLayout IsVisible="{Binding SelectedQuestionType, Converter={StaticResource QuestionTypeToBoolConverter}, ConverterParameter='MultipleChoice'}">
+                <Label Text="Đáp án 1" />
+                <Entry Text="{Binding Option1}" Placeholder="Đáp án 1" />
+                <Label Text="Đáp án 2" />
+                <Entry Text="{Binding Option2}" Placeholder="Đáp án 2" />
+                <Label Text="Đáp án 3" />
+                <Entry Text="{Binding Option3}" Placeholder="Đáp án 3" />
+                <Label Text="Đáp án 4" />
+                <Entry Text="{Binding Option4}" Placeholder="Đáp án 4" />
+                <Picker Title="Chọn đáp án đúng"
+                        ItemsSource="{Binding CurrentOptions}"
+                        SelectedIndex="{Binding CorrectAnswerIndex}" />
+            </StackLayout>
+
+            <!-- FillInTheBlank -->
+            <StackLayout IsVisible="{Binding SelectedQuestionType, Converter={StaticResource QuestionTypeToBoolConverter}, ConverterParameter='FillInTheBlank'}">
+                <Label Text="Đáp án đúng (điền vào chỗ trống)" />
+                <Entry Text="{Binding SelectedQuestion.CorrectAnswer}" Placeholder="Nhập đáp án đúng" />
+            </StackLayout>
+
+            <!-- DragAndDrop -->
+            <StackLayout IsVisible="{Binding SelectedQuestionType, Converter={StaticResource QuestionTypeToBoolConverter}, ConverterParameter='DragAndDrop'}">
+                <Label Text="Các cặp kéo thả, mỗi dòng một cặp A:B" />
+                <Editor Text="{Binding DragPairsText}" 
+            Placeholder="ví dụ:\nhello:xin chào\nbook:quyển sách"
+            AutoSize="TextChanges"
+            HeightRequest="100"/>
+                <Label Text="(Nhập mỗi dòng một cặp. VD: 'từ:nghĩa')" FontSize="12" TextColor="Gray"/>
+            </StackLayout>
+
+
+            <!-- TrueFalse -->
+            <StackLayout IsVisible="{Binding SelectedQuestionType, Converter={StaticResource QuestionTypeToBoolConverter}, ConverterParameter='TrueFalse'}">
+
+                <Picker Title="Chọn đáp án đúng (Đúng/Sai)"
+                        ItemsSource="{Binding TrueFalseOptions}"
+                        SelectedIndex="{Binding TrueFalseAnswerIndex}" />
+            </StackLayout>
+
+            <Label Text="Điểm cho câu hỏi" />
+            <Entry Text="{Binding SelectedQuestion.Points}" Keyboard="Numeric" Placeholder="Số điểm" />
+
+            <Button Text="Thêm/Sửa câu hỏi" Command="{Binding AddOrUpdateQuestionCommand}" />
+
+            <Label Text="{Binding ErrorMessage}" TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}" />
+
+            <Label Text="Danh sách câu hỏi" FontAttributes="Bold" FontSize="18" Margin="0,10,0,0"/>
+            <CollectionView ItemsSource="{Binding Questions}" HeightRequest="400">
+                <CollectionView.EmptyView>
+                    <Label Text="Chưa có câu hỏi nào." HorizontalOptions="Center" VerticalOptions="Center"/>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Sửa"
+                                               BackgroundColor="Orange"
+                                               Command="{Binding BindingContext.EditQuestionCommand, Source={x:Reference ThisPage}}"
+                                               CommandParameter="{Binding .}" />
+                                    <SwipeItem Text="Xoá"
+                                               BackgroundColor="Red"
+                                               Command="{Binding BindingContext.DeleteQuestionCommand, Source={x:Reference ThisPage}}"
+                                               CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            <Grid Padding="8" Margin="0,0,0,6" BackgroundColor="White">
+                                <VerticalStackLayout>
+                                    <Label Text="{Binding Content}" FontAttributes="Bold"/>
+                                    <Label Text="{Binding Type}" FontSize="12" TextColor="Gray"/>
+                                    <Label Text="Điểm: {Binding Points}" FontSize="12" TextColor="Green"/>
+                                    <Label Text="Đáp án đúng: {Binding CorrectAnswer}" FontSize="12"/>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+
+
+

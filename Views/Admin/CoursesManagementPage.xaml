@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.Admin.CoursesManagementPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:LanguageLearningApp.ViewModels.Admin"
+    xmlns:models="clr-namespace:LanguageLearningApp.Models"
+    x:Name="ThisPage">
+
+    <ContentPage.BindingContext>
+        <vm:AdminCourseViewModel />
+    </ContentPage.BindingContext>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Label Text="Quản lý khóa học" FontAttributes="Bold" FontSize="24" HorizontalOptions="Center"/>
+            <Entry Placeholder="Tìm kiếm..." Text="{Binding SearchText}" />
+            <Button Text="Tìm kiếm" Command="{Binding SearchCoursesCommand}" />
+
+            <Label Text="Tiêu đề" />
+            <Entry Text="{Binding SelectedCourse.Title}" Placeholder="Tiêu đề khóa học" />
+            <Label Text="Mô tả" />
+            <Editor Text="{Binding SelectedCourse.Description}" Placeholder="Mô tả khóa học" AutoSize="TextChanges" HeightRequest="60"/>
+            <Label Text="Image URL" />
+            <Entry Text="{Binding SelectedCourse.ImageUrl}" Placeholder="Link ảnh đại diện" />
+            <Label Text="Loại" />
+            <Picker SelectedItem="{Binding SelectedCourse.Type}" Title="Chọn loại">
+                <Picker.ItemsSource>
+                    <x:Array Type="{x:Type models:CourseType}">
+                        <models:CourseType>Language</models:CourseType>
+                        <models:CourseType>Programming</models:CourseType>
+                        <models:CourseType>Business</models:CourseType>
+                        <models:CourseType>Science</models:CourseType>
+                        <models:CourseType>Arts</models:CourseType>
+                    </x:Array>
+                </Picker.ItemsSource>
+            </Picker>
+
+            <Button Text="Thêm/Sửa khóa học" Command="{Binding AddOrUpdateCourseCommand}" />
+
+            <Label Text="{Binding ErrorMessage}" TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}" />
+
+            <Label Text="Danh sách khóa học" FontAttributes="Bold" FontSize="18" Margin="0,10,0,0"/>
+            <CollectionView ItemsSource="{Binding Courses}" HeightRequest="400"
+                            SelectionMode="Single"
+                            SelectionChanged="CollectionView_SelectionChanged">
+                <CollectionView.EmptyView>
+                    <Label Text="Chưa có khóa học nào." HorizontalOptions="Center" VerticalOptions="Center"/>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Sửa"
+                                               BackgroundColor="Orange"
+                                               Command="{Binding BindingContext.EditCourseCommand, Source={x:Reference ThisPage}}"
+                                               CommandParameter="{Binding .}" />
+                                    <SwipeItem Text="Xoá"
+                                               BackgroundColor="Red"
+                                               Command="{Binding BindingContext.DeleteCourseCommand, Source={x:Reference ThisPage}}"
+                                               CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            <Grid Padding="8" Margin="0,0,0,6" BackgroundColor="White">
+                                <VerticalStackLayout>
+                                    <Label Text="{Binding Title}" FontAttributes="Bold"/>
+                                    <Label Text="{Binding Description}" LineBreakMode="TailTruncation" FontSize="12"/>
+                                    <Label Text="{Binding Type}" FontSize="12" TextColor="Gray"/>
+                                    <Image Source="{Binding ImageUrl}" HeightRequest="80" WidthRequest="120"/>
+                                    <Button Text="Quản lý bài học" Command="{Binding BindingContext.SelectCourseCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.User.AccountPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:LanguageLearningApp.ViewModels.User"
+    x:DataType="vm:UserAccountViewModel">
+    <ContentPage.BindingContext>
+        <vm:UserAccountViewModel />
+    </ContentPage.BindingContext>
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="18">
+            <Label Text="Tài khoản" FontSize="24" FontAttributes="Bold" HorizontalOptions="Center"/>
+
+            <Frame HorizontalOptions="Center" BorderColor="#eee" CornerRadius="60" Padding="0">
+                <Image Source="{Binding CurrentUser.AvatarUrl}" WidthRequest="120" HeightRequest="120"
+                       Aspect="AspectFill" 
+                       VerticalOptions="Center" HorizontalOptions="Center"/>
+                <Button Text="Đổi ảnh" Command="{Binding ChangeAvatarCommand}" FontSize="12"
+                        BackgroundColor="#eee" TextColor="#333" Padding="2" Margin="0,-30,0,0"/>
+            </Frame>
+
+            <Label Text="{Binding CurrentUser.FullName}" FontAttributes="Bold" FontSize="20" HorizontalOptions="Center"/>
+            <Label Text="{Binding CurrentUser.Email}" FontSize="14" TextColor="#666" HorizontalOptions="Center"/>
+
+            <Label Text="Điểm tích lũy:" FontAttributes="Bold" FontSize="16"/>
+            <Label Text="{Binding CurrentUser.Points}" FontSize="18" TextColor="#0077cc" />
+
+            <Button Text="Đổi tên" Command="{Binding EditProfileCommand}"
+                    BackgroundColor="#eee" TextColor="#333"/>
+
+            <Button Text="Đăng xuất" Command="{Binding LogoutCommand}"
+                    BackgroundColor="Red" TextColor="White" Margin="0,24,0,0"/>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <Label Text="{Binding ErrorMessage}" TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}" />
+
+            <Label Text="Badge đã đạt:" FontSize="16" FontAttributes="Bold"/>
+            <ScrollView Orientation="Horizontal" HeightRequest="60">
+                <HorizontalStackLayout Spacing="8">
+                    <!-- Hiển thị badge user đã có -->
+                    <Frame BackgroundColor="#eee" CornerRadius="12"
+                           Padding="6" Margin="0,4,0,0"
+                           IsVisible="{Binding CurrentUser.BadgeIds.Count, Converter={StaticResource IntGreaterThanZeroConverter}}">
+                        <Label Text="🏅" FontSize="32"/>
+                        <!-- Nếu có logic Badge, có thể load tên badge tương ứng -->
+                    </Frame>
+                    <!-- Lặp BadgeIds nếu muốn -->
+                </HorizontalStackLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+

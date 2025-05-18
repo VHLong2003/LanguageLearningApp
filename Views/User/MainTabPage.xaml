@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<TabbedPage 
+    x:Class="LanguageLearningApp.Views.User.MainTabPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:LanguageLearningApp.Views.User">
+
+    <views:HomePage Title="Trang chủ" IconImageSource="home.png"/>
+    <views:AchievementsPage Title="Thành tích" IconImageSource="achievement.png"/>
+    <views:ShopPage Title="Shop" IconImageSource="shop.png"/>
+    <views:AccountPage Title="Tài khoản" IconImageSource="account.png"/>
+</TabbedPage>
