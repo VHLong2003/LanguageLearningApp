@@ -1,46 +1,230 @@
-﻿using LanguageLearningApp.Helpers;
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using LanguageLearningApp.Helpers;
 using LanguageLearningApp.Models;
 using Newtonsoft.Json;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace LanguageLearningApp.Services
 {
     public class UserService
     {
-        // Lấy user info từ DB (dùng IdToken cho xác thực, userId là LocalId/FirebaseUid)
-        public async Task<AppUser> GetUserByIdAsync(string userId, string idToken)
+        private readonly HttpClient _httpClient;
+        private readonly FirebaseConfig _firebaseConfig;
+
+        public UserService(FirebaseConfig firebaseConfig)
         {
-            var url = $"{FirebaseConfig.DatabaseUrl}users/{userId}.json?auth={idToken}";
-            var json = await ApiHelper.GetAsync(url);
-            if (string.IsNullOrWhiteSpace(json) || json == "null")
+            _httpClient = new HttpClient();
+            _firebaseConfig = firebaseConfig;
+        }
+
+        public async Task<UsersModel> GetUserByIdAsync(string userId, string idToken)
+        {
+            try
+            {
+                // Set authorization header
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {idToken}");
+
+                var response = await _httpClient.GetAsync(
+                    $"{_firebaseConfig.DatabaseUrl}/users/{userId}.json?auth={idToken}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var user = JsonConvert.DeserializeObject<UsersModel>(content);
+                    return user;
+                }
+
                 return null;
-            return JsonConvert.DeserializeObject<AppUser>(json);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
-        // Gọi khi đăng ký user thành công để lưu vào Database
-        public async Task SaveUserAsync(AppUser user, string idToken)
+        public async Task<bool> CreateUserAsync(UsersModel user, string idToken)
         {
-            var url = $"{FirebaseConfig.DatabaseUrl}users/{user.UserId}.json?auth={idToken}";
-            var json = JsonConvert.SerializeObject(user);
-            await ApiHelper.PutAsync(url, json);
+            try
+            {
+                var json = JsonConvert.SerializeObject(user);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync(
+                    $"{_firebaseConfig.DatabaseUrl}/users/{user.UserId}.json?auth={idToken}",
+                    content);
+
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public async Task<List<AppUser>> GetAllUsersAsync()
+        public async Task<bool> UpdateUserAsync(UsersModel user, string idToken)
         {
-            var url = $"{FirebaseConfig.DatabaseUrl}users.json";
-            var json = await ApiHelper.GetAsync(url);
-            if (string.IsNullOrWhiteSpace(json) || json == "null")
-                return new List<AppUser>();
-            var dict = JsonConvert.DeserializeObject<Dictionary<string, AppUser>>(json);
-            return dict?.Values.ToList() ?? new List<AppUser>();
+            try
+            {
+                var json = JsonConvert.SerializeObject(user);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PatchAsync(
+                    $"{_firebaseConfig.DatabaseUrl}/users/{user.UserId}.json?auth={idToken}",
+                    content);
+
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public async Task DeleteUserAsync(string userId)
+        public async Task<bool> AddFriendAsync(string userId, string friendId, string idToken)
         {
-            var url = $"{FirebaseConfig.DatabaseUrl}users/{userId}.json";
-            await ApiHelper.DeleteAsync(url);
+            try
+            {
+                // Get current user
+                var user = await GetUserByIdAsync(userId, idToken);
+                if (user == null) return false;
+
+                // Add friend to list
+                if (user.FriendIds == null)
+                    user.FriendIds = new List<string>();
+
+                if (!user.FriendIds.Contains(friendId))
+                    user.FriendIds.Add(friendId);
+
+                // Update user
+                return await UpdateUserAsync(user, idToken);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
+        public async Task<bool> RemoveFriendAsync(string userId, string friendId, string idToken)
+        {
+            try
+            {
+                // Get current user
+                var user = await GetUserByIdAsync(userId, idToken);
+                if (user == null || user.FriendIds == null) return false;
+
+                // Remove friend from list
+                user.FriendIds.Remove(friendId);
+
+                // Update user
+                return await UpdateUserAsync(user, idToken);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<List<UsersModel>> GetFriendsAsync(string userId, string idToken)
+        {
+            var friends = new List<UsersModel>();
+
+            try
+            {
+                // Get current user
+                var user = await GetUserByIdAsync(userId, idToken);
+                if (user == null || user.FriendIds == null || user.FriendIds.Count == 0)
+                    return friends;
+
+                // Get each friend's details
+                foreach (var friendId in user.FriendIds)
+                {
+                    var friend = await GetUserByIdAsync(friendId, idToken);
+                    if (friend != null)
+                        friends.Add(friend);
+                }
+
+                return friends;
+            }
+            catch
+            {
+                return friends;
+            }
+        }
+
+        public async Task<bool> AddPointsAsync(string userId, int points, string idToken)
+        {
+            try
+            {
+                // Get current user
+                var user = await GetUserByIdAsync(userId, idToken);
+                if (user == null) return false;
+
+                // Add points
+                user.Points += points;
+                user.LastActive = DateTime.Now;
+
+                // Update user
+                return await UpdateUserAsync(user, idToken);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> AddCoinsAsync(string userId, int coins, string idToken)
+        {
+            try
+            {
+                // Get current user
+                var user = await GetUserByIdAsync(userId, idToken);
+                if (user == null) return false;
+
+                // Add coins
+                user.Coins += coins;
+
+                // Update user
+                return await UpdateUserAsync(user, idToken);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<List<UsersModel>> GetAllUsersAsync(string idToken)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync(
+                    $"{_firebaseConfig.DatabaseUrl}/users.json?auth={idToken}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var usersDictionary = JsonConvert.DeserializeObject<Dictionary<string, UsersModel>>(content);
+
+                    var users = new List<UsersModel>();
+                    foreach (var kvp in usersDictionary)
+                    {
+                        var user = kvp.Value;
+                        user.UserId = kvp.Key;
+                        users.Add(user);
+                    }
+
+                    return users;
+                }
+
+                return new List<UsersModel>();
+            }
+            catch
+            {
+                return new List<UsersModel>();
+            }
+        }
     }
 }

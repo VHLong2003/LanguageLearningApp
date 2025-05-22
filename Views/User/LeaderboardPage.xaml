@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.User.LeaderboardPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.User"
+    Title="Bảng xếp hạng">
+
+
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Padding="18,20,18,28" Spacing="18">
+
+                <!-- Tiêu đề -->
+                <Label Text="Bảng xếp hạng" FontSize="28" FontAttributes="Bold" TextColor="#21264C" HorizontalOptions="Center" />
+
+                <!-- Thanh chuyển tab -->
+                <Grid ColumnDefinitions="*,*,*" HeightRequest="40" Margin="0,10,0,8">
+                    <Button Text="Toàn cầu"
+                            Command="{Binding ShowGlobalCommand}"
+                            BackgroundColor="{Binding ShowingFriends, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#E0E7FF|#6376E0'}"
+                            TextColor="{Binding ShowingFriends, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#6376E0|White'}"
+                            FontAttributes="Bold"
+                            CornerRadius="20"
+                            Grid.Column="0" />
+                    <Button Text="Bạn bè"
+                            Command="{Binding ShowFriendsCommand}"
+                            BackgroundColor="{Binding ShowingFriends, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#6376E0|#E0E7FF'}"
+                            TextColor="{Binding ShowingFriends, Converter={StaticResource BoolToColorConverter}, ConverterParameter='White|#6376E0'}"
+                            FontAttributes="Bold"
+                            CornerRadius="20"
+                            Grid.Column="1" />
+                    <Button Text="Tuần này"
+                            Command="{Binding ShowWeeklyCommand}"
+                            BackgroundColor="{Binding ShowingWeekly, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#6376E0|#E0E7FF'}"
+                            TextColor="{Binding ShowingWeekly, Converter={StaticResource BoolToColorConverter}, ConverterParameter='White|#6376E0'}"
+                            FontAttributes="Bold"
+                            CornerRadius="20"
+                            Grid.Column="2" />
+                </Grid>
+
+                <!-- Thanh tìm kiếm -->
+                <SearchBar
+                    Placeholder="Tìm kiếm người dùng"
+                    Text="{Binding SearchQuery}"
+                    FontSize="15"
+                    BackgroundColor="#F1F4F9"
+                    Margin="0,0,0,8"
+                    CancelButtonColor="#6376E0"
+                />
+
+                <!-- Hiển thị người dùng hiện tại -->
+                <Frame CornerRadius="15" Padding="10" HasShadow="True" BackgroundColor="#EEF4FB" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Frame CornerRadius="25" HeightRequest="50" WidthRequest="50" Padding="0" IsClippedToBounds="True" VerticalOptions="Center">
+                            <Image Source="{Binding CurrentUserRank.AvatarUrl, TargetNullValue='default_avatar.png'}" Aspect="AspectFill"/>
+                        </Frame>
+                        <StackLayout Grid.Column="1" Padding="14,0,0,0" VerticalOptions="Center">
+                            <Label Text="{Binding CurrentUserRank.UserName}" FontAttributes="Bold" FontSize="16"/>
+                            <Label Text="{Binding CurrentUserRank.TotalPoints, StringFormat='Điểm: {0}'}" FontSize="13" TextColor="#8B94A3"/>
+                        </StackLayout>
+                        <Label Grid.Column="2" Text="{Binding CurrentUserRank.Rank, StringFormat='# {0}'}" VerticalOptions="Center" FontAttributes="Bold" TextColor="#6376E0" FontSize="18"/>
+                    </Grid>
+                </Frame>
+
+                <!-- Danh sách xếp hạng -->
+                <CollectionView
+                    ItemsSource="{Binding GlobalLeaderboard}"
+                    IsVisible="{Binding ShowingFriends, Converter={StaticResource InvertBoolConverter}}"
+                    HeightRequest="380">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame CornerRadius="12" Padding="8" Margin="0,0,0,8" HasShadow="True">
+                                <Grid ColumnDefinitions="40,Auto,*,Auto" VerticalOptions="Center">
+                                    <Label Text="{Binding Rank, StringFormat='# {0}'}" FontAttributes="Bold" VerticalOptions="Center" FontSize="15" TextColor="#6376E0"/>
+                                    <Frame CornerRadius="20" HeightRequest="40" WidthRequest="40" Padding="0" IsClippedToBounds="True" VerticalOptions="Center" Margin="8,0">
+                                        <Image Source="{Binding AvatarUrl, TargetNullValue='default_avatar.png'}" Aspect="AspectFill"/>
+                                    </Frame>
+                                    <StackLayout Grid.Column="2" Padding="5,0,0,0" VerticalOptions="Center">
+                                        <Label Text="{Binding UserName}" FontAttributes="Bold" FontSize="15"/>
+                                        <Label Text="{Binding TotalPoints, StringFormat='Điểm: {0}'}" FontSize="12" TextColor="#8B94A3"/>
+                                    </StackLayout>
+                                    <Button Grid.Column="3"
+                                            Text="Kết bạn"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:LeaderboardViewModel}}, Path=SendFriendRequestCommand}"
+                                            CommandParameter="{Binding UserId}"
+                                            FontSize="13"
+                                            Padding="10,2"
+                                            CornerRadius="10"
+                                            BackgroundColor="#E0E7FF"
+                                            TextColor="#6376E0"
+                                            VerticalOptions="Center"
+                                            IsVisible="{Binding UserId, Converter={StaticResource NotCurrentUserConverter}}"/>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <Label Text="Không có dữ liệu bảng xếp hạng." FontSize="15" TextColor="#8B94A3" HorizontalOptions="Center"/>
+                    </CollectionView.EmptyView>
+                </CollectionView>
+
+                <!-- Danh sách xếp hạng bạn bè -->
+                <CollectionView
+                    ItemsSource="{Binding FriendsLeaderboard}"
+                    IsVisible="{Binding ShowingFriends}"
+                    HeightRequest="380">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame CornerRadius="12" Padding="8" Margin="0,0,0,8" HasShadow="True">
+                                <Grid ColumnDefinitions="40,Auto,*,Auto" VerticalOptions="Center">
+                                    <Label Text="{Binding Rank, StringFormat='# {0}'}" FontAttributes="Bold" VerticalOptions="Center" FontSize="15" TextColor="#6376E0"/>
+                                    <Frame CornerRadius="20" HeightRequest="40" WidthRequest="40" Padding="0" IsClippedToBounds="True" VerticalOptions="Center" Margin="8,0">
+                                        <Image Source="{Binding AvatarUrl, TargetNullValue='default_avatar.png'}" Aspect="AspectFill"/>
+                                    </Frame>
+                                    <StackLayout Grid.Column="2" Padding="5,0,0,0" VerticalOptions="Center">
+                                        <Label Text="{Binding UserName}" FontAttributes="Bold" FontSize="15"/>
+                                        <Label Text="{Binding TotalPoints, StringFormat='Điểm: {0}'}" FontSize="12" TextColor="#8B94A3"/>
+                                    </StackLayout>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <Label Text="Chưa có bạn bè hoặc không có dữ liệu." FontSize="15" TextColor="#8B94A3" HorizontalOptions="Center"/>
+                    </CollectionView.EmptyView>
+                </CollectionView>
+
+                <!-- Danh sách xếp hạng tuần -->
+                <CollectionView
+                    ItemsSource="{Binding WeeklyLeaderboard}"
+                    IsVisible="{Binding ShowingWeekly}"
+                    HeightRequest="380">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame CornerRadius="12" Padding="8" Margin="0,0,0,8" HasShadow="True">
+                                <Grid ColumnDefinitions="40,Auto,*,Auto" VerticalOptions="Center">
+                                    <Label Text="{Binding Rank, StringFormat='# {0}'}" FontAttributes="Bold" VerticalOptions="Center" FontSize="15" TextColor="#6376E0"/>
+                                    <Frame CornerRadius="20" HeightRequest="40" WidthRequest="40" Padding="0" IsClippedToBounds="True" VerticalOptions="Center" Margin="8,0">
+                                        <Image Source="{Binding AvatarUrl, TargetNullValue='default_avatar.png'}" Aspect="AspectFill"/>
+                                    </Frame>
+                                    <StackLayout Grid.Column="2" Padding="5,0,0,0" VerticalOptions="Center">
+                                        <Label Text="{Binding UserName}" FontAttributes="Bold" FontSize="15"/>
+                                        <Label Text="{Binding WeeklyPoints, StringFormat='Điểm tuần: {0}'}" FontSize="12" TextColor="#8B94A3"/>
+                                    </StackLayout>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <Label Text="Không có dữ liệu tuần này." FontSize="15" TextColor="#8B94A3" HorizontalOptions="Center"/>
+                    </CollectionView.EmptyView>
+                </CollectionView>
+
+                <ActivityIndicator IsRunning="{Binding IsRefreshing}" IsVisible="{Binding IsRefreshing}" HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

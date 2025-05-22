@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.Auth.LoginPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    BackgroundColor="#F1F4FB"
+    Title="Đăng nhập">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="26,56,26,26">
+            <!-- Logo -->
+            <Image Source="app_logo.png"
+                   HeightRequest="80"
+                   WidthRequest="80"
+                   HorizontalOptions="Center"/>
+            <Label Text="Chào mừng bạn quay lại!"
+                   FontSize="26"
+                   HorizontalOptions="Center"
+                   TextColor="#21264C"
+                   FontAttributes="Bold"
+                   Margin="0,12,0,0"/>
+            <Label Text="Đăng nhập để tiếp tục học tập và chinh phục mục tiêu."
+                   FontSize="15"
+                   TextColor="#6A7691"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,0"/>
+
+            <!-- Error/Success Message -->
+            <Label Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}"
+                   TextColor="Red"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"/>
+            <Label Text="{Binding SuccessMessage}"
+                   IsVisible="{Binding SuccessMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}"
+                   TextColor="#31A24C"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"/>
+
+            <!-- Email -->
+            <Frame CornerRadius="15" HasShadow="False" BackgroundColor="White" Padding="10" Margin="0,8,0,0">
+                <HorizontalStackLayout Spacing="8">
+                    <Image Source="mail_icon.png" WidthRequest="22" HeightRequest="22"/>
+                    <Entry
+                        Placeholder="Email"
+                        Keyboard="Email"
+                        Text="{Binding Email}"
+                        FontSize="16"
+                        TextColor="#222"
+                        BackgroundColor="Transparent"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"/>
+                </HorizontalStackLayout>
+            </Frame>
+
+            <!-- Password -->
+            <Frame CornerRadius="15" HasShadow="False" BackgroundColor="White" Padding="10">
+                <HorizontalStackLayout Spacing="8">
+                    <Image Source="password_icon.png" WidthRequest="22" HeightRequest="22"/>
+                    <Entry
+                        Placeholder="Mật khẩu"
+                        IsPassword="True"
+                        Text="{Binding Password}"
+                        FontSize="16"
+                        TextColor="#222"
+                        BackgroundColor="Transparent"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"/>
+                </HorizontalStackLayout>
+            </Frame>
+
+            <!-- Đăng nhập Button -->
+            <Button
+                Text="Đăng nhập"
+                Command="{Binding LoginCommand}"
+                IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"
+                FontSize="18"
+                CornerRadius="18"
+                HeightRequest="50"
+                BackgroundColor="#6376E0"
+                TextColor="White"
+                FontAttributes="Bold"
+                Margin="0,10,0,0"/>
+            <!-- Đang loading -->
+            <ActivityIndicator IsVisible="{Binding IsLoading}" IsRunning="{Binding IsLoading}" Color="#6376E0" Margin="0,-12,0,8"/>
+
+            <!-- Forgot password & Đăng ký -->
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                <Button
+                    Text="Quên mật khẩu?"
+                    Command="{Binding GoToForgotPasswordCommand}"
+                    FontSize="15"
+                    BackgroundColor="Transparent"
+                    TextColor="#6376E0"
+                    Padding="0"
+                    />
+                <Label Text="|" FontSize="15" TextColor="#6376E0"/>
+                <Button
+                    Text="Đăng ký"
+                    Command="{Binding GoToRegisterCommand}"
+                    FontSize="15"
+                    BackgroundColor="Transparent"
+                    TextColor="#6376E0"
+                    Padding="0"/>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

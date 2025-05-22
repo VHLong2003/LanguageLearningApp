@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.Admin"
+             xmlns:models="clr-namespace:LanguageLearningApp.Models"
+             x:Class="LanguageLearningApp.Views.Admin.HomeAdminPage"
+             Title="Trang quản trị">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <StackLayout Padding="20" Spacing="20">
+
+                <!-- Header Admin -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Frame Grid.Column="0"
+                           CornerRadius="25"
+                           HeightRequest="50"
+                           WidthRequest="50"
+                           Padding="0"
+                           IsClippedToBounds="True">
+                        <Image Source="{Binding AdminUser.AvatarUrl, TargetNullValue='admin_avatar.png'}"
+                               Aspect="AspectFill" />
+                    </Frame>
+
+                    <StackLayout Grid.Column="1"
+                                 VerticalOptions="Center"
+                                 Margin="15,0">
+                        <Label Text="{Binding AdminUser.FullName, StringFormat='Xin chào, {0}!'}"
+                               FontSize="18"
+                               FontAttributes="Bold" />
+                        <Label Text="Quản trị viên"
+                               TextColor="Gray" />
+                    </StackLayout>
+
+                    <Button Text="Đăng xuất"
+                            Grid.Column="2"
+                            Command="{Binding LogoutCommand}"
+                            BackgroundColor="#e74c3c"
+                            TextColor="White"
+                            HeightRequest="40"
+                            WidthRequest="90" />
+                </Grid>
+
+                <!-- Thống kê nhanh -->
+                <Frame BorderColor="#3498db"
+                       CornerRadius="10"
+                       HasShadow="True">
+                    <Grid ColumnDefinitions="*,*"
+                          RowDefinitions="Auto,Auto,Auto">
+
+                        <Label Text="Số liệu tổng quan"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               Grid.ColumnSpan="2"
+                               HorizontalOptions="Center"
+                               Margin="0,0,0,15" />
+
+                        <!-- Số lượng người dùng -->
+                        <Frame Grid.Row="1"
+                               Grid.Column="0"
+                               CornerRadius="10"
+                               BackgroundColor="#3498db"
+                               Padding="10"
+                               Margin="5">
+                            <StackLayout>
+                                <Label Text="Tổng số người dùng"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+                                <Label Text="{Binding TotalUsers}"
+                                       FontSize="24"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                                <Label Text="{Binding NewUsersToday, StringFormat='+{0} hôm nay'}"
+                                       FontSize="12"
+                                       TextColor="White"
+                                       HorizontalOptions="End" />
+                            </StackLayout>
+                        </Frame>
+
+                        <!-- Số lượng khóa học -->
+                        <Frame Grid.Row="1"
+                               Grid.Column="1"
+                               CornerRadius="10"
+                               BackgroundColor="#2ecc71"
+                               Padding="10"
+                               Margin="5">
+                            <StackLayout>
+                                <Label Text="Tổng số khóa học"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+                                <Label Text="{Binding TotalCourses}"
+                                       FontSize="24"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                            </StackLayout>
+                        </Frame>
+
+                        <!-- Số lượng bài học -->
+                        <Frame Grid.Row="2"
+                               Grid.Column="0"
+                               Grid.ColumnSpan="2"
+                               CornerRadius="10"
+                               BackgroundColor="#e67e22"
+                               Padding="10"
+                               Margin="5">
+                            <StackLayout>
+                                <Label Text="Tổng số bài học đang hoạt động"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+                                <Label Text="{Binding TotalActiveLessons}"
+                                       FontSize="24"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                            </StackLayout>
+                        </Frame>
+                    </Grid>
+                </Frame>
+
+                <!-- Hành động nhanh -->
+                <StackLayout Spacing="10">
+                    <Label Text="Chức năng nhanh"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <Grid ColumnDefinitions="*,*"
+                          RowDefinitions="Auto,Auto"
+                          ColumnSpacing="10"
+                          RowSpacing="10">
+
+                        <Button Text="Quản lý người dùng"
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Command="{Binding ManageUsersCommand}"
+                                BackgroundColor="#3498db"
+                                TextColor="White" />
+
+                        <Button Text="Quản lý khóa học"
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Command="{Binding ManageCoursesCommand}"
+                                BackgroundColor="#2ecc71"
+                                TextColor="White" />
+
+                        <Button Text="Quản lý bài học"
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Command="{Binding ManageLessonsCommand}"
+                                BackgroundColor="#e67e22"
+                                TextColor="White" />
+
+                        <Button Text="Quản lý Shop"
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Command="{Binding ManageShopCommand}"
+                                BackgroundColor="#9b59b6"
+                                TextColor="White" />
+                    </Grid>
+
+                    <Button Text="Cập nhật Bảng xếp hạng"
+                            Command="{Binding UpdateLeaderboardCommand}"
+                            BackgroundColor="#2748b0"
+                            TextColor="White"
+                            Margin="0,10,0,0" />
+                </StackLayout>
+
+                <!-- Người dùng mới nhất -->
+                <StackLayout Spacing="10">
+                    <Label Text="Người dùng mới nhất"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding RecentUsers}"
+                                   HeightRequest="200">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:UsersModel">
+                                <Grid Padding="10"
+                                      ColumnDefinitions="Auto,*,Auto">
+
+                                    <Frame Grid.Column="0"
+                                           CornerRadius="20"
+                                           HeightRequest="40"
+                                           WidthRequest="40"
+                                           Padding="0"
+                                           IsClippedToBounds="True">
+                                        <Image Source="{Binding AvatarUrl, TargetNullValue='default_avatar.png'}"
+                                               Aspect="AspectFill" />
+                                    </Frame>
+
+                                    <StackLayout Grid.Column="1"
+                                               Margin="10,0"
+                                               VerticalOptions="Center">
+                                        <Label Text="{Binding FullName}"
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding Email}"
+                                               FontSize="12"
+                                               TextColor="Gray" />
+                                    </StackLayout>
+
+                                    <Label Text="{Binding DateJoined, StringFormat='{0:dd/MM/yyyy}'}"
+                                           Grid.Column="2"
+                                           VerticalOptions="Center"
+                                           TextColor="Gray"
+                                           FontSize="12" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <Label Text="Không có người dùng nào"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   TextColor="Gray" />
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </StackLayout>
+
+                <!-- Khóa học mới nhất -->
+                <StackLayout Spacing="10">
+                    <Label Text="Khóa học mới nhất"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding RecentCourses}"
+                                   HeightRequest="200">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:CourseModel">
+                                <Grid Padding="10">
+                                    <Frame CornerRadius="10"
+                                           Padding="0"
+                                           HasShadow="True">
+                                        <Grid RowDefinitions="80,Auto"
+                                              ColumnDefinitions="*">
+
+                                            <Image Source="{Binding ImageUrl, TargetNullValue='default_course.png'}"
+                                                   Aspect="AspectFill"
+                                                   Grid.Row="0" />
+
+                                            <StackLayout Grid.Row="1"
+                                                       Padding="10">
+                                                <Label Text="{Binding Title}"
+                                                       FontAttributes="Bold" />
+
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <Label Text="{Binding Type}"
+                                                           TextColor="Gray"
+                                                           FontSize="12"
+                                                           Grid.Column="0" />
+
+                                                    <Label Text="{Binding IsPublished, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Đã xuất bản|Bản nháp'}"
+                                                           TextColor="{Binding IsPublished, Converter={StaticResource BoolToColorConverter}, ConverterParameter='Green|Gray'}"
+                                                           FontSize="12"
+                                                           Grid.Column="1" />
+                                                </Grid>
+                                            </StackLayout>
+                                        </Grid>
+                                    </Frame>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <Label Text="Không có khóa học nào"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   TextColor="Gray" />
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </StackLayout>
+
+            </StackLayout>
+        </ScrollView>
+    </RefreshView>
+
+</ContentPage>

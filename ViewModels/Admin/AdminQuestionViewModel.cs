@@ -1,267 +1,666 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using LanguageLearningApp.Models;
-using LanguageLearningApp.Services;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using System.Linq;
+using System.Windows.Input;
+using LanguageLearningApp.Helpers;
+using LanguageLearningApp.Models;
+using LanguageLearningApp.Services;
+using Microsoft.Maui.Controls;
 
 namespace LanguageLearningApp.ViewModels.Admin
 {
-    public partial class AdminQuestionViewModel : ObservableObject
+    [QueryProperty(nameof(LessonId), "lessonId")]
+    [QueryProperty(nameof(CourseId), "courseId")]
+    public class AdminQuestionViewModel : BaseViewModel
     {
-        private readonly QuestionService _questionService = new QuestionService();
+        private readonly QuestionService _questionService;
+        private readonly LessonService _lessonService;
+        private readonly StorageService _storageService;
 
-        [ObservableProperty] private ObservableCollection<Question> questions = new();
-        [ObservableProperty] private Question selectedQuestion = new();
-        [ObservableProperty] private bool isBusy;
-        [ObservableProperty] private string errorMessage;
-        [ObservableProperty] private string lessonId;
-        [ObservableProperty]
-        private string dragPairsText;
+        private string _lessonId;
+        private string _courseId;
+        private LessonModel _currentLesson;
+        private ObservableCollection<QuestionModel> _questions;
+        private QuestionModel _selectedQuestion;
+        private bool _isRefreshing;
+        private bool _isLoading;
+        private bool _isEditing;
+        private bool _isNewQuestion;
+        private string _errorMessage;
+        private ObservableCollection<QuestionType> _questionTypes;
+        private ObservableCollection<string> _options;
+        private string _newOption;
 
-        [ObservableProperty] private QuestionType selectedQuestionType;
+        // Form fields for editing/creating question
+        private string _questionId;
+        private string _content;
+        private string _imageUrl;
+        private string _audioUrl;
+        private QuestionType _type;
+        private string _correctAnswer;
+        private string _explanation;
+        private int _points;
+        private int _order;
+        private int _timeLimit;
 
-        // MultipleChoice
-        [ObservableProperty] private string option1;
-        [ObservableProperty] private string option2;
-        [ObservableProperty] private string option3;
-        [ObservableProperty] private string option4;
-        [ObservableProperty] private int correctAnswerIndex = -1;
-        public ObservableCollection<string> CurrentOptions { get; set; } = new();
-
-        // FillInTheBlank: dùng CorrectAnswer (Entry)
-
-        // DragAndDrop nhiều cặp
-        [ObservableProperty] private ObservableCollection<DragPair> dragPairs = new();
-
-        [RelayCommand]
-        public void AddDragPair() => DragPairs.Add(new DragPair());
-        [RelayCommand]
-        public void RemoveDragPair(DragPair pair)
+        public string LessonId
         {
-            if (DragPairs.Contains(pair)) DragPairs.Remove(pair);
-        }
-
-        // TrueFalse
-        [ObservableProperty] private int trueFalseAnswerIndex = -1;
-        public ObservableCollection<string> TrueFalseOptions { get; set; } = new() { "Đúng", "Sai" };
-
-        public AdminQuestionViewModel(string lessonId)
-        {
-            LessonId = lessonId;
-            _ = LoadQuestionsAsync();
-            SelectedQuestion = new Question { LessonId = lessonId };
-            SelectedQuestionType = SelectedQuestion.Type;
-            DragPairs = new ObservableCollection<DragPair>();
-        }
-
-        partial void OnOption1Changed(string value) => RefreshOptions();
-        partial void OnOption2Changed(string value) => RefreshOptions();
-        partial void OnOption3Changed(string value) => RefreshOptions();
-        partial void OnOption4Changed(string value) => RefreshOptions();
-
-        partial void OnSelectedQuestionTypeChanged(QuestionType value)
-        {
-            if (SelectedQuestion != null)
+            get => _lessonId;
+            set
             {
-                SelectedQuestion.Type = value;
-                ClearInputExceptContentAndPoints();
-                if (value == QuestionType.DragAndDrop && DragPairs.Count == 0)
-                    DragPairs.Add(new DragPair());
+                if (SetProperty(ref _lessonId, value) && !string.IsNullOrEmpty(value))
+                {
+                    // When lessonId is set via QueryProperty, load data
+                    Task.Run(async () => await LoadLessonAndQuestionsAsync());
+                }
             }
         }
 
-        private void RefreshOptions()
+        public string CourseId
         {
-            CurrentOptions.Clear();
-            if (!string.IsNullOrWhiteSpace(Option1)) CurrentOptions.Add(Option1);
-            if (!string.IsNullOrWhiteSpace(Option2)) CurrentOptions.Add(Option2);
-            if (!string.IsNullOrWhiteSpace(Option3)) CurrentOptions.Add(Option3);
-            if (!string.IsNullOrWhiteSpace(Option4)) CurrentOptions.Add(Option4);
-            if (CorrectAnswerIndex >= CurrentOptions.Count) CorrectAnswerIndex = -1;
+            get => _courseId;
+            set => SetProperty(ref _courseId, value);
         }
 
-        [RelayCommand]
-        public async Task LoadQuestionsAsync()
+        public LessonModel CurrentLesson
         {
-            IsBusy = true;
-            ErrorMessage = "";
-            try
-            {
-                var all = await _questionService.GetQuestionsByLessonIdAsync(LessonId);
-                Questions = new ObservableCollection<Question>(all);
-            }
-            catch (System.Exception ex)
-            {
-                ErrorMessage = ex.Message;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            get => _currentLesson;
+            set => SetProperty(ref _currentLesson, value);
         }
 
-        [RelayCommand]
-        public async Task AddOrUpdateQuestionAsync()
+        public ObservableCollection<QuestionModel> Questions
         {
-            if (SelectedQuestion == null || string.IsNullOrWhiteSpace(SelectedQuestion.Content))
-            {
-                ErrorMessage = "Nội dung câu hỏi không được để trống!";
-                return;
-            }
-            SelectedQuestion.LessonId = LessonId;
-            SelectedQuestion.Type = SelectedQuestionType;
+            get => _questions;
+            set => SetProperty(ref _questions, value);
+        }
 
-            switch (SelectedQuestion.Type)
+        public QuestionModel SelectedQuestion
+        {
+            get => _selectedQuestion;
+            set
             {
-                case QuestionType.MultipleChoice:
-                    SelectedQuestion.Options = CurrentOptions.ToList();
-                    if (CorrectAnswerIndex < 0 || CorrectAnswerIndex >= CurrentOptions.Count)
+                if (SetProperty(ref _selectedQuestion, value) && value != null)
+                {
+                    // Update form fields with selected question
+                    QuestionId = value.QuestionId;
+                    Content = value.Content;
+                    ImageUrl = value.ImageUrl;
+                    AudioUrl = value.AudioUrl;
+                    Type = value.Type;
+                    CorrectAnswer = value.CorrectAnswer;
+                    Explanation = value.Explanation;
+                    Points = value.Points;
+                    Order = value.Order;
+                    TimeLimit = value.TimeLimit;
+
+                    // Load options
+                    Options.Clear();
+                    if (value.Options != null)
                     {
-                        ErrorMessage = "Chọn đáp án đúng!";
-                        return;
-                    }
-                    SelectedQuestion.CorrectAnswer = CurrentOptions[CorrectAnswerIndex];
-                    break;
-
-                case QuestionType.FillInTheBlank:
-                    SelectedQuestion.Options = null;
-                    if (string.IsNullOrWhiteSpace(SelectedQuestion.CorrectAnswer))
-                    {
-                        ErrorMessage = "Nhập đáp án đúng!";
-                        return;
-                    }
-                    break;
-
-                case QuestionType.DragAndDrop:
-                    SelectedQuestion.Options = new List<string>();
-                    if (!string.IsNullOrWhiteSpace(DragPairsText))
-                    {
-                        var lines = DragPairsText.Split('\n', '\r')
-                            .Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x));
-                        foreach (var line in lines)
+                        foreach (var option in value.Options)
                         {
-                            if (line.Contains(":"))
-                                SelectedQuestion.Options.Add(line);
+                            Options.Add(option);
                         }
                     }
-                    SelectedQuestion.CorrectAnswer = string.Join("|", SelectedQuestion.Options);
-                    break;
 
-
-                case QuestionType.TrueFalse:
-                    SelectedQuestion.Options = TrueFalseOptions.ToList();
-                    if (TrueFalseAnswerIndex < 0 || TrueFalseAnswerIndex > 1)
-                    {
-                        ErrorMessage = "Chọn đúng/sai!";
-                        return;
-                    }
-                    SelectedQuestion.CorrectAnswer = TrueFalseOptions[TrueFalseAnswerIndex];
-                    break;
-            }
-
-            IsBusy = true;
-            try
-            {
-                await _questionService.AddOrUpdateQuestionAsync(SelectedQuestion);
-                await LoadQuestionsAsync();
-                ClearInput();
-            }
-            catch (System.Exception ex)
-            {
-                ErrorMessage = ex.Message;
-            }
-            finally
-            {
-                IsBusy = false;
+                    IsEditing = true;
+                    IsNewQuestion = false;
+                }
             }
         }
 
-        [RelayCommand]
-        public async Task DeleteQuestionAsync(Question question)
+        public bool IsRefreshing
         {
-            if (question == null) return;
-            IsBusy = true;
-            try
-            {
-                await _questionService.DeleteQuestionAsync(question.QuestionId);
-                Questions.Remove(question);
-                if (SelectedQuestion == question) ClearInput();
-            }
-            catch (System.Exception ex)
-            {
-                ErrorMessage = ex.Message;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            get => _isRefreshing;
+            set => SetProperty(ref _isRefreshing, value);
         }
 
-        [RelayCommand]
-        public void EditQuestion(Question question)
+        public bool IsLoading
         {
-            if (question != null)
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
+        }
+
+        public bool IsEditing
+        {
+            get => _isEditing;
+            set => SetProperty(ref _isEditing, value);
+        }
+
+        public bool IsNewQuestion
+        {
+            get => _isNewQuestion;
+            set => SetProperty(ref _isNewQuestion, value);
+        }
+
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set => SetProperty(ref _errorMessage, value);
+        }
+
+        public ObservableCollection<QuestionType> QuestionTypes
+        {
+            get => _questionTypes;
+            set => SetProperty(ref _questionTypes, value);
+        }
+
+        public ObservableCollection<string> Options
+        {
+            get => _options;
+            set => SetProperty(ref _options, value);
+        }
+
+        public string NewOption
+        {
+            get => _newOption;
+            set => SetProperty(ref _newOption, value);
+        }
+
+        // Form properties
+        public string QuestionId
+        {
+            get => _questionId;
+            set => SetProperty(ref _questionId, value);
+        }
+
+        public string Content
+        {
+            get => _content;
+            set => SetProperty(ref _content, value);
+        }
+
+        public string ImageUrl
+        {
+            get => _imageUrl;
+            set => SetProperty(ref _imageUrl, value);
+        }
+
+        public string AudioUrl
+        {
+            get => _audioUrl;
+            set => SetProperty(ref _audioUrl, value);
+        }
+
+        public QuestionType Type
+        {
+            get => _type;
+            set => SetProperty(ref _type, value);
+        }
+
+        public string CorrectAnswer
+        {
+            get => _correctAnswer;
+            set => SetProperty(ref _correctAnswer, value);
+        }
+
+        public string Explanation
+        {
+            get => _explanation;
+            set => SetProperty(ref _explanation, value);
+        }
+
+        public int Points
+        {
+            get => _points;
+            set => SetProperty(ref _points, value);
+        }
+
+        public int Order
+        {
+            get => _order;
+            set => SetProperty(ref _order, value);
+        }
+
+        public int TimeLimit
+        {
+            get => _timeLimit;
+            set => SetProperty(ref _timeLimit, value);
+        }
+
+        // Commands
+        public ICommand RefreshCommand { get; }
+        public ICommand CreateQuestionCommand { get; }
+        public ICommand SaveQuestionCommand { get; }
+        public ICommand CancelEditCommand { get; }
+        public ICommand DeleteQuestionCommand { get; }
+        public ICommand PickImageCommand { get; }
+        public ICommand AddOptionCommand { get; }
+        public ICommand RemoveOptionCommand { get; }
+        public ICommand MoveUpCommand { get; }
+        public ICommand MoveDownCommand { get; }
+        public ICommand BackToLessonsCommand { get; }
+
+        public AdminQuestionViewModel(
+            QuestionService questionService,
+            LessonService lessonService,
+            StorageService storageService)
+        {
+            _questionService = questionService;
+            _lessonService = lessonService;
+            _storageService = storageService;
+
+            Questions = new ObservableCollection<QuestionModel>();
+            Options = new ObservableCollection<string>();
+
+            // Available question types
+            QuestionTypes = new ObservableCollection<QuestionType>
             {
-                SelectedQuestion = new Question
+                QuestionType.MultipleChoice,
+                QuestionType.TrueFalse,
+                QuestionType.FillInTheBlank,
+                QuestionType.Matching,
+                QuestionType.ShortAnswer,
+                QuestionType.VoiceRecording,
+                QuestionType.Arrangement
+            };
+
+            RefreshCommand = new Command(async () => await LoadQuestionsAsync());
+            CreateQuestionCommand = new Command(CreateNewQuestion);
+            SaveQuestionCommand = new Command(async () => await SaveQuestionAsync());
+            CancelEditCommand = new Command(CancelEdit);
+            DeleteQuestionCommand = new Command<QuestionModel>(async (question) => await DeleteQuestionAsync(question));
+            PickImageCommand = new Command(async () => await PickImageAsync());
+            AddOptionCommand = new Command(AddOption);
+            RemoveOptionCommand = new Command<string>(RemoveOption);
+            MoveUpCommand = new Command<QuestionModel>(async (question) => await MoveUpAsync(question));
+            MoveDownCommand = new Command<QuestionModel>(async (question) => await MoveDownAsync(question));
+            BackToLessonsCommand = new Command(async () => await Shell.Current.GoToAsync($"../lessons?courseId={CourseId}"));
+        }
+
+        private async Task LoadLessonAndQuestionsAsync()
+        {
+            IsLoading = true;
+            ErrorMessage = string.Empty;
+
+            try
+            {
+                var idToken = LocalStorageHelper.GetItem("idToken");
+
+                // Load lesson details
+                CurrentLesson = await _lessonService.GetLessonByIdAsync(LessonId, idToken);
+
+                if (CurrentLesson != null)
                 {
-                    QuestionId = question.QuestionId,
-                    LessonId = question.LessonId,
-                    Content = question.Content,
-                    Type = question.Type,
-                    Options = question.Options != null ? new List<string>(question.Options) : new List<string>(),
-                    CorrectAnswer = question.CorrectAnswer,
-                    Points = question.Points
-                };
-
-                SelectedQuestionType = question.Type;
-
-                Option1 = question.Options != null && question.Options.Count > 0 ? question.Options[0] : "";
-                Option2 = question.Options != null && question.Options.Count > 1 ? question.Options[1] : "";
-                Option3 = question.Options != null && question.Options.Count > 2 ? question.Options[2] : "";
-                Option4 = question.Options != null && question.Options.Count > 3 ? question.Options[3] : "";
-
-                // DragAndDrop nhiều cặp
-                DragPairs.Clear();
-                if (question.Type == QuestionType.DragAndDrop && question.Options != null)
-                {
-                    DragPairsText = string.Join("\n", question.Options);
+                    await LoadQuestionsAsync();
                 }
                 else
                 {
-                    DragPairsText = "";
+                    ErrorMessage = "Lesson not found";
                 }
-
-
-                RefreshOptions();
-                CorrectAnswerIndex = question.Type == QuestionType.MultipleChoice
-                    ? CurrentOptions.IndexOf(question.CorrectAnswer ?? "")
-                    : -1;
-                TrueFalseAnswerIndex = question.Type == QuestionType.TrueFalse
-                    ? TrueFalseOptions.IndexOf(question.CorrectAnswer ?? "")
-                    : -1;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error loading lesson: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
-        private void ClearInput()
+        private async Task LoadQuestionsAsync()
         {
-            SelectedQuestion = new Question { LessonId = LessonId };
-            Option1 = Option2 = Option3 = Option4 = "";
-            DragPairsText = "";
-            CorrectAnswerIndex = -1;
-            TrueFalseAnswerIndex = -1;
-            CurrentOptions.Clear();
-            SelectedQuestionType = QuestionType.MultipleChoice;
+            IsRefreshing = true;
+            ErrorMessage = string.Empty;
+
+            try
+            {
+                var idToken = LocalStorageHelper.GetItem("idToken");
+                var lessonQuestions = await _questionService.GetQuestionsByLessonIdAsync(LessonId, idToken);
+
+                // Sort questions by order
+                lessonQuestions.Sort((a, b) => a.Order.CompareTo(b.Order));
+
+                Questions.Clear();
+                foreach (var question in lessonQuestions)
+                {
+                    Questions.Add(question);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error loading questions: {ex.Message}";
+            }
+            finally
+            {
+                IsRefreshing = false;
+            }
         }
 
-        private void ClearInputExceptContentAndPoints()
+        private void CreateNewQuestion()
         {
-            Option1 = Option2 = Option3 = Option4 = "";
-            DragPairsText = "";
-            CorrectAnswerIndex = -1;
-            TrueFalseAnswerIndex = -1;
-            CurrentOptions.Clear();
+            // Clear form fields
+            QuestionId = string.Empty;
+            Content = string.Empty;
+            ImageUrl = string.Empty;
+            AudioUrl = string.Empty;
+            Type = QuestionType.MultipleChoice; // Default
+            CorrectAnswer = string.Empty;
+            Explanation = string.Empty;
+            Points = 10; // Default
+            Order = Questions.Count + 1; // Set order to next in sequence
+            TimeLimit = 30; // Default 30 seconds
+
+            // Clear options
+            Options.Clear();
+            Options.Add("Option 1");
+            Options.Add("Option 2");
+            Options.Add("Option 3");
+            Options.Add("Option 4");
+
+            IsNewQuestion = true;
+            IsEditing = true;
+            SelectedQuestion = null;
+            ErrorMessage = string.Empty;
+        }
+
+        private async Task SaveQuestionAsync()
+        {
+            if (string.IsNullOrWhiteSpace(Content))
+            {
+                ErrorMessage = "Question content is required";
+                return;
+            }
+
+            if (Type == QuestionType.MultipleChoice && Options.Count < 2)
+            {
+                ErrorMessage = "Multiple choice questions require at least 2 options";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(CorrectAnswer))
+            {
+                ErrorMessage = "Correct answer is required";
+                return;
+            }
+
+            if (Points <= 0)
+            {
+                ErrorMessage = "Points must be greater than 0";
+                return;
+            }
+
+            IsLoading = true;
+            ErrorMessage = string.Empty;
+
+            try
+            {
+                var idToken = LocalStorageHelper.GetItem("idToken");
+
+                if (IsNewQuestion)
+                {
+                    // Create new question
+                    var newQuestion = new QuestionModel
+                    {
+                        LessonId = LessonId,
+                        Content = Content,
+                        ImageUrl = ImageUrl,
+                        AudioUrl = AudioUrl,
+                        Type = Type,
+                        Options = new List<string>(Options),
+                        CorrectAnswer = CorrectAnswer,
+                        Explanation = Explanation,
+                        Points = Points,
+                        Order = Order,
+                        TimeLimit = TimeLimit
+                    };
+
+                    var questionId = await _questionService.CreateQuestionAsync(newQuestion, idToken);
+
+                    if (!string.IsNullOrEmpty(questionId))
+                    {
+                        newQuestion.QuestionId = questionId;
+                        Questions.Add(newQuestion);
+
+                        // Reset form
+                        CancelEdit();
+                    }
+                    else
+                    {
+                        ErrorMessage = "Failed to create question";
+                    }
+                }
+                else
+                {
+                    // Update existing question
+                    if (_selectedQuestion != null)
+                    {
+                        _selectedQuestion.Content = Content;
+                        _selectedQuestion.ImageUrl = ImageUrl;
+                        _selectedQuestion.AudioUrl = AudioUrl;
+                        _selectedQuestion.Type = Type;
+                        _selectedQuestion.Options = new List<string>(Options);
+                        _selectedQuestion.CorrectAnswer = CorrectAnswer;
+                        _selectedQuestion.Explanation = Explanation;
+                        _selectedQuestion.Points = Points;
+                        _selectedQuestion.Order = Order;
+                        _selectedQuestion.TimeLimit = TimeLimit;
+
+                        var success = await _questionService.UpdateQuestionAsync(_selectedQuestion, idToken);
+
+                        if (success)
+                        {
+                            // Reset form
+                            CancelEdit();
+
+                            // Reload to ensure correct ordering
+                            await LoadQuestionsAsync();
+                        }
+                        else
+                        {
+                            ErrorMessage = "Failed to update question";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error saving question: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private void CancelEdit()
+        {
+            IsEditing = false;
+            IsNewQuestion = false;
+            SelectedQuestion = null;
+
+            // Clear form fields
+            QuestionId = string.Empty;
+            Content = string.Empty;
+            ImageUrl = string.Empty;
+            AudioUrl = string.Empty;
+            Type = QuestionType.MultipleChoice;
+            CorrectAnswer = string.Empty;
+            Explanation = string.Empty;
+            Points = 0;
+            Order = 0;
+            TimeLimit = 0;
+
+            // Clear options
+            Options.Clear();
+            NewOption = string.Empty;
+
+            ErrorMessage = string.Empty;
+        }
+
+        private async Task DeleteQuestionAsync(QuestionModel question)
+        {
+            if (question == null)
+                return;
+
+            var confirm = await App.Current.MainPage.DisplayAlert(
+                "Confirm Delete",
+                "Are you sure you want to delete this question?",
+                "Yes", "No");
+
+            if (!confirm)
+                return;
+
+            IsLoading = true;
+
+            try
+            {
+                var idToken = LocalStorageHelper.GetItem("idToken");
+                var success = await _questionService.DeleteQuestionAsync(question.QuestionId, idToken);
+
+                if (success)
+                {
+                    Questions.Remove(question);
+
+                    // Reorder remaining questions
+                    await ReorderQuestionsAsync();
+
+                    // If the deleted question was being edited, clear the form
+                    if (SelectedQuestion == question)
+                    {
+                        CancelEdit();
+                    }
+                }
+                else
+                {
+                    await App.Current.MainPage.DisplayAlert("Error", "Failed to delete question", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert("Error", $"Error deleting question: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task PickImageAsync()
+        {
+            try
+            {
+                // Use MAUI file picker
+                var result = await FilePicker.PickAsync(new PickOptions
+                {
+                    FileTypes = FilePickerFileType.Images,
+                    PickerTitle = "Select Question Image"
+                });
+
+                if (result != null)
+                {
+                    IsLoading = true;
+
+                    var idToken = LocalStorageHelper.GetItem("idToken");
+                    var imageUrl = await _storageService.UploadImageFromPickerAsync(result, "question_images", idToken);
+
+                    if (!string.IsNullOrEmpty(imageUrl))
+                    {
+                        ImageUrl = imageUrl;
+                    }
+                    else
+                    {
+                        await App.Current.MainPage.DisplayAlert("Error", "Failed to upload image", "OK");
+                    }
+
+                    IsLoading = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert("Error", $"Error picking image: {ex.Message}", "OK");
+            }
+        }
+
+        private void AddOption()
+        {
+            if (string.IsNullOrWhiteSpace(NewOption))
+                return;
+
+            Options.Add(NewOption);
+            NewOption = string.Empty;
+        }
+
+        private void RemoveOption(string option)
+        {
+            if (string.IsNullOrWhiteSpace(option))
+                return;
+
+            Options.Remove(option);
+
+            // If the correct answer was this option, clear it
+            if (CorrectAnswer == option)
+                CorrectAnswer = string.Empty;
+        }
+
+        private async Task MoveUpAsync(QuestionModel question)
+        {
+            if (question == null)
+                return;
+
+            var index = Questions.IndexOf(question);
+
+            // Can't move up if already first
+            if (index <= 0)
+                return;
+
+            // Swap with previous question
+            var previousQuestion = Questions[index - 1];
+
+            // Swap order values
+            int tempOrder = question.Order;
+            question.Order = previousQuestion.Order;
+            previousQuestion.Order = tempOrder;
+
+            // Update questions in database
+            var idToken = LocalStorageHelper.GetItem("idToken");
+            await _questionService.UpdateQuestionAsync(question, idToken);
+            await _questionService.UpdateQuestionAsync(previousQuestion, idToken);
+
+            // Reload questions to refresh order
+            await LoadQuestionsAsync();
+        }
+
+        private async Task MoveDownAsync(QuestionModel question)
+        {
+            if (question == null)
+                return;
+
+            var index = Questions.IndexOf(question);
+
+            // Can't move down if already last
+            if (index >= Questions.Count - 1)
+                return;
+
+            // Swap with next question
+            var nextQuestion = Questions[index + 1];
+
+            // Swap order values
+            int tempOrder = question.Order;
+            question.Order = nextQuestion.Order;
+            nextQuestion.Order = tempOrder;
+
+            // Update questions in database
+            var idToken = LocalStorageHelper.GetItem("idToken");
+            await _questionService.UpdateQuestionAsync(question, idToken);
+            await _questionService.UpdateQuestionAsync(nextQuestion, idToken);
+
+            // Reload questions to refresh order
+            await LoadQuestionsAsync();
+        }
+
+        private async Task ReorderQuestionsAsync()
+        {
+            // Reorder remaining questions
+            var idToken = LocalStorageHelper.GetItem("idToken");
+
+            for (int i = 0; i < Questions.Count; i++)
+            {
+                var question = Questions[i];
+                question.Order = i + 1;
+                await _questionService.UpdateQuestionAsync(question, idToken);
+            }
         }
     }
 }

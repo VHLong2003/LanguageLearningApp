@@ -1,30 +1,39 @@
-﻿using LanguageLearningApp.Models;
-using LanguageLearningApp.ViewModels.Admin;
-using LanguageLearningApp.Views.Admin;
+﻿using LanguageLearningApp.ViewModels.Admin;
+using Microsoft.Maui.Controls;
 
 namespace LanguageLearningApp.Views.Admin
 {
     public partial class CoursesManagementPage : ContentPage
     {
-        private AdminCourseViewModel ViewModel => BindingContext as AdminCourseViewModel;
-        public CoursesManagementPage()
+        private readonly AdminCourseViewModel _viewModel;
+
+        public CoursesManagementPage(AdminCourseViewModel viewModel)
         {
             InitializeComponent();
-            if (ViewModel != null)
+            BindingContext = _viewModel = viewModel;
+        }
+
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+            await _viewModel.InitializeAsync();
+        }
+
+        // Xử lý khi chọn một khoá học trong danh sách
+        private void OnCourseSelected(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.CurrentSelection.Count == 0)
+                return;
+
+            var selectedCourse = e.CurrentSelection[0] as Models.CourseModel;
+            if (selectedCourse != null)
             {
-                ViewModel.CourseSelected += OnCourseSelected;
+                _viewModel.SelectedCourse = selectedCourse;
             }
+
+            // Bỏ chọn sau khi xử lý (giúp CollectionView không bị giữ trạng thái highlight)
+            ((CollectionView)sender).SelectedItem = null;
         }
 
-        private async void OnCourseSelected(object sender, Course course)
-        {
-            if (course != null)
-                await Navigation.PushAsync(new LessonsManagementPage(course.CourseId));
-        }
-
-        private void CollectionView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Để tránh highlight khi chọn, không cần code gì cũng được hoặc có thể call logic ở đây nếu muốn
-        }
     }
 }

@@ -1,12 +1,204 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.User"
+             xmlns:models="clr-namespace:LanguageLearningApp.Models"
              x:Class="LanguageLearningApp.Views.User.ShopPage"
-             Title="ShopPage">
-    <VerticalStackLayout>
-        <Label 
-            Text="Welcome to .NET MAUI!"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+             Title="Shop">
+
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header with coins and tabs -->
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,*,Auto"
+              BackgroundColor="#f5f5f5"
+              Padding="10">
+
+            <Button Text="Shop" 
+                    Grid.Column="0"
+                    Command="{Binding ShowShopCommand}"
+                    BackgroundColor="{Binding ShowingUserItems, Converter={StaticResource InvertBoolToColorConverter}, ConverterParameter='#3498db|Transparent'}"
+                    TextColor="{Binding ShowingUserItems, Converter={StaticResource InvertBoolToColorConverter}, ConverterParameter='White|#3498db'}" />
+
+            <Button Text="My Items" 
+                    Grid.Column="1"
+                    Command="{Binding ShowInventoryCommand}"
+                    BackgroundColor="{Binding ShowingUserItems, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#3498db|Transparent'}"
+                    TextColor="{Binding ShowingUserItems, Converter={StaticResource BoolToColorConverter}, ConverterParameter='White|#3498db'}" />
+
+            <HorizontalStackLayout Grid.Column="2"
+                                   Spacing="5"
+                                   VerticalOptions="Center">
+                <Image Source="coin.png"
+                       HeightRequest="20"
+                       WidthRequest="20" />
+                <Label Text="{Binding UserCoins}"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </Grid>
+
+        <RefreshView Grid.Row="1"
+                    IsRefreshing="{Binding IsRefreshing}"
+                    Command="{Binding RefreshCommand}">
+
+            <ScrollView>
+                <Grid RowDefinitions="Auto,*" Padding="10">
+
+                    <!-- Category filter (only shown when viewing shop) -->
+                    <HorizontalStackLayout Grid.Row="0"
+                                           Spacing="10"
+                                           IsVisible="{Binding ShowingUserItems, Converter={StaticResource InvertBoolConverter}}">
+
+                        <Label Text="Categories:"
+                               VerticalOptions="Center" />
+
+                        <Picker Title="Select category"
+                                SelectedItem="{Binding SelectedCategory}"
+                                ItemsSource="{Binding Categories}" />
+                    </HorizontalStackLayout>
+
+                    <!-- Shop Items -->
+                    <CollectionView Grid.Row="1"
+                                   ItemsSource="{Binding ShopItems}"
+                                   IsVisible="{Binding ShowingUserItems, Converter={StaticResource InvertBoolConverter}}"
+                                   SelectionMode="Single"
+                                   SelectionChanged="OnItemSelected">
+
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Vertical"
+                                            Span="2"
+                                            HorizontalItemSpacing="10"
+                                            VerticalItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ShopItemModel">
+                                <Frame CornerRadius="10"
+                                        Padding="10"
+                                        HasShadow="True">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:ShopViewModel}}, Path=PurchaseItemCommand}"
+                              CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
+                                    <Grid RowDefinitions="Auto,Auto,*,Auto">
+                                        <Image Source="{Binding IconUrl}"
+                                               HeightRequest="80"
+                                               Aspect="AspectFit"
+                                               HorizontalOptions="Center"
+                                               Grid.Row="0" />
+
+                                        <Label Text="{Binding Title}"
+                                               FontAttributes="Bold"
+                                               HorizontalOptions="Center"
+                                               Grid.Row="1" />
+
+                                        <Label Text="{Binding Description}"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="2"
+                                               FontSize="Small"
+                                               Grid.Row="2" />
+
+                                        <HorizontalStackLayout Grid.Row="3"
+                                                               HorizontalOptions="End"
+                                                               Spacing="5">
+                                            <Label Text="{Binding Price}"
+                                                   FontAttributes="Bold"
+                                                   VerticalOptions="Center" />
+                                            <Image Source="coin.png"
+                                                   HeightRequest="15"
+                                                   WidthRequest="15"
+                                                   VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                    </Grid>
+                                </Frame>
+
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout HorizontalOptions="Center"
+                                                 VerticalOptions="Center"
+                                                 Spacing="10">
+                                <Image Source="empty_shop.png"
+                                       HeightRequest="100"
+                                       WidthRequest="100" />
+                                <Label Text="No items available in the shop"
+                                       HorizontalOptions="Center" />
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+
+                    <!-- User Items (Inventory) -->
+                    <CollectionView Grid.Row="1"
+                                   ItemsSource="{Binding UserItems}"
+                                   IsVisible="{Binding ShowingUserItems}"
+                                   SelectionMode="Single"
+                                   SelectionChanged="OnItemSelected">
+
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Vertical"
+                                            Span="2"
+                                            HorizontalItemSpacing="10"
+                                            VerticalItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ShopItemModel">
+                                <Frame CornerRadius="10"
+                                        Padding="10"
+                                        HasShadow="True">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:ShopViewModel}}, Path=ItemSelectedCommand}"
+                              CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
+                                    <Grid RowDefinitions="Auto,Auto,*,Auto">
+                                        <Image Source="{Binding IconUrl}"
+                                                HeightRequest="80"
+                                                Aspect="AspectFit"
+                                                HorizontalOptions="Center"
+                                                Grid.Row="0" />
+
+                                        <Label Text="{Binding Title}"
+                                               FontAttributes="Bold"
+                                               HorizontalOptions="Center"
+                                               Grid.Row="1" />
+
+                                        <Label Text="{Binding Description}"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="2"
+                                               FontSize="Small"
+                                               Grid.Row="2" />
+
+                                        <Button Text="Use"
+                                                Grid.Row="3"
+                                                HeightRequest="30"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:ShopViewModel}}, Path=UseItemCommand}"
+                                                CommandParameter="{Binding .}" />
+                                    </Grid>
+                                </Frame>
+
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout HorizontalOptions="Center"
+                                               VerticalOptions="Center"
+                                               Spacing="10">
+                                <Image Source="empty_inventory.png"
+                                       HeightRequest="100"
+                                       WidthRequest="100" />
+                                <Label Text="You don't have any items yet"
+                                       HorizontalOptions="Center" />
+                                <Button Text="Go to Shop"
+                                        Command="{Binding ShowShopCommand}"
+                                        BackgroundColor="#3498db"
+                                        TextColor="White" />
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </Grid>
+            </ScrollView>
+        </RefreshView>
+    </Grid>
 </ContentPage>

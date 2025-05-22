@@ -1,105 +1,205 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using LanguageLearningApp.Helpers;
-using LanguageLearningApp.Services;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using LanguageLearningApp.Helpers;
+using LanguageLearningApp.Models;
+using LanguageLearningApp.Services;
+using Microsoft.Maui.Controls;
 
 namespace LanguageLearningApp.ViewModels.User
 {
-    public partial class AuthViewModel : ObservableObject
+    public class AuthViewModel : BaseViewModel
     {
-        private readonly AuthService _authService = new AuthService();
-        private readonly UserService _userService = new UserService();
+        private readonly AuthService _authService;
+        private readonly UserService _userService;
 
-        [ObservableProperty] private string email;
-        [ObservableProperty] private string password;
-        [ObservableProperty] private string fullName;
-        [ObservableProperty] private string confirmPassword;
-        [ObservableProperty] private bool isBusy;
-        [ObservableProperty] private string errorMessage;
+        private string _email;
+        private string _password;
+        private string _confirmPassword;
+        private string _fullName;
+        private string _errorMessage;
+        private string _successMessage;
+        private bool _isLoading;
+        private string _forgotEmail;
 
-        public event EventHandler AuthSuccess;
-        public event EventHandler AdminAuthSuccess;
-        public event EventHandler RegisterSuccess;
+        public string Email { get => _email; set => SetProperty(ref _email, value); }
+        public string Password { get => _password; set => SetProperty(ref _password, value); }
+        public string ConfirmPassword { get => _confirmPassword; set => SetProperty(ref _confirmPassword, value); }
+        public string FullName { get => _fullName; set => SetProperty(ref _fullName, value); }
+        public string ErrorMessage { get => _errorMessage; set => SetProperty(ref _errorMessage, value); }
+        public string SuccessMessage { get => _successMessage; set => SetProperty(ref _successMessage, value); }
+        public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
+        public string ForgotEmail { get => _forgotEmail; set => SetProperty(ref _forgotEmail, value); }
 
-        [RelayCommand]
-        public async Task Login()
+        public ICommand RegisterCommand { get; }
+        public ICommand LoginCommand { get; }
+        public ICommand ForgotPasswordCommand { get; }
+        public ICommand GoToLoginCommand { get; }
+        public ICommand GoToRegisterCommand { get; }
+        public ICommand GoToForgotPasswordCommand { get; }
+
+        public AuthViewModel(AuthService authService, UserService userService)
         {
-            IsBusy = true;
-            ErrorMessage = "";
-            try
-            {
-                var response = await _authService.LoginAsync(Email, Password);
-                var user = await _userService.GetUserByIdAsync(response.LocalId, response.IdToken);
-                if (user == null)
-                {
-                    ErrorMessage = "Không tìm thấy thông tin người dùng!";
-                    return;
-                }
+            _authService = authService;
+            _userService = userService;
 
-                // Lưu đăng nhập
-                AuthStorage.SaveLogin(response.LocalId, response.IdToken, user.Role);
-
-                if (user.Role.ToLower() == "admin")
-                    AdminAuthSuccess?.Invoke(this, EventArgs.Empty);
-                else
-                    AuthSuccess?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = ex.Message;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            RegisterCommand = new Command(async () => await RegisterAsync());
+            LoginCommand = new Command(async () => await LoginAsync());
+            ForgotPasswordCommand = new Command(async () => await ForgotPasswordAsync());
+            GoToLoginCommand = new Command(async () => await GoToLoginAsync());
+            GoToRegisterCommand = new Command(async () => await GoToRegisterAsync());
+            GoToForgotPasswordCommand = new Command(async () => await GoToForgotPasswordAsync());
         }
 
-        [RelayCommand]
-        public async Task Register()
+        // ĐĂNG KÝ (GỬI MAIL XÁC MINH)
+        private async Task RegisterAsync()
         {
-            IsBusy = true;
-            ErrorMessage = "";
-            if (Password != ConfirmPassword)
+            ErrorMessage = SuccessMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(Email) ||
+                string.IsNullOrWhiteSpace(Password) ||
+                string.IsNullOrWhiteSpace(FullName) ||
+                string.IsNullOrWhiteSpace(ConfirmPassword))
             {
-                ErrorMessage = "Mật khẩu nhập lại không khớp.";
-                IsBusy = false;
+                ErrorMessage = "Vui lòng điền đầy đủ thông tin";
                 return;
             }
+            if (Password != ConfirmPassword)
+            {
+                ErrorMessage = "Mật khẩu không khớp";
+                return;
+            }
+            if (!ValidationHelper.IsValidEmail(Email))
+            {
+                ErrorMessage = "Email không hợp lệ";
+                return;
+            }
+            if (!ValidationHelper.IsValidPassword(Password))
+            {
+                ErrorMessage = "Mật khẩu phải ít nhất 6 ký tự";
+                return;
+            }
+
+            IsLoading = true;
             try
             {
-                var response = await _authService.RegisterAsync(Email, Password);
+                var (success, message, userId, token) = await _authService.RegisterAsync(Email, Password, FullName);
 
-                var user = new Models.AppUser
+                if (success)
                 {
-                    UserId = response.LocalId,
-                    Email = Email,
-                    FullName = FullName,
-                    Role = "user",
-                    Points = 0
-                };
-                await _userService.SaveUserAsync(user, response.IdToken);
-
-                // Lưu đăng nhập ngay sau khi đăng ký thành công (auto login)
-                AuthStorage.SaveLogin(response.LocalId, response.IdToken, "user");
-
-                RegisterSuccess?.Invoke(this, EventArgs.Empty);
+                    // Gửi mail xác minh
+                    await _authService.SendVerificationEmailAsync(token);
+                    SuccessMessage = "Đăng ký thành công. Vui lòng kiểm tra email và xác minh trước khi đăng nhập!";
+                }
+                else
+                {
+                    ErrorMessage = message;
+                }
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = $"Đăng ký lỗi: {ex.Message}";
             }
             finally
             {
-                IsBusy = false;
+                IsLoading = false;
             }
         }
 
-        [RelayCommand]
-        public void Logout()
+        // ĐĂNG NHẬP (CHỈ CHO ĐĂNG NHẬP NẾU ĐÃ XÁC MINH EMAIL)
+        private async Task LoginAsync()
         {
-            AuthStorage.ClearLogin();
+            ErrorMessage = SuccessMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            {
+                ErrorMessage = "Vui lòng nhập email và mật khẩu";
+                return;
+            }
+
+            IsLoading = true;
+            try
+            {
+                var (success, message, userId, token) = await _authService.LoginAsync(Email, Password);
+
+                if (success)
+                {
+                    // Kiểm tra xác minh email
+                    var isVerified = await _authService.IsEmailVerifiedAsync(token);
+                    if (!isVerified)
+                    {
+                        ErrorMessage = "Bạn cần xác minh email trước khi đăng nhập. Vui lòng kiểm tra hộp thư và nhấn vào liên kết xác minh.";
+                        return;
+                    }
+
+                    var user = await _userService.GetUserByIdAsync(userId, token);
+                    LocalStorageHelper.SetItem("userId", userId);
+                    LocalStorageHelper.SetItem("idToken", token);
+                    LocalStorageHelper.SetItem("userRole", user.Role);
+
+                    if (user.Role == "Admin")
+                        await Shell.Current.GoToAsync("///admin");
+                    else
+                        await Shell.Current.GoToAsync("///user");
+                }
+                else
+                {
+                    ErrorMessage = message;
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Đăng nhập lỗi: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
+
+        // QUÊN MẬT KHẨU (GỬI MAIL RESET)
+        private async Task ForgotPasswordAsync()
+        {
+            ErrorMessage = SuccessMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(ForgotEmail))
+            {
+                ErrorMessage = "Vui lòng nhập email";
+                return;
+            }
+
+            if (!ValidationHelper.IsValidEmail(ForgotEmail))
+            {
+                ErrorMessage = "Email không hợp lệ";
+                return;
+            }
+
+            IsLoading = true;
+            try
+            {
+                var result = await _authService.ResetPasswordAsync(ForgotEmail);
+                if (result)
+                {
+                    SuccessMessage = "Đã gửi email khôi phục mật khẩu. Vui lòng kiểm tra hộp thư!";
+                }
+                else
+                {
+                    ErrorMessage = "Gửi mail thất bại. Thử lại sau.";
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Gửi mail thất bại: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        // Navigation
+        private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("login");
+        private async Task GoToRegisterAsync() => await Shell.Current.GoToAsync("register");
+        private async Task GoToForgotPasswordAsync() => await Shell.Current.GoToAsync("forgotPassword");
     }
 }

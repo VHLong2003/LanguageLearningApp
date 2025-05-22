@@ -1,28 +1,38 @@
-﻿using LanguageLearningApp.Models;
-using LanguageLearningApp.ViewModels.Admin;
+﻿using LanguageLearningApp.ViewModels.Admin;
+using LanguageLearningApp.Models;
 
 namespace LanguageLearningApp.Views.Admin
 {
     public partial class LessonsManagementPage : ContentPage
     {
-        private AdminLessonViewModel ViewModel => BindingContext as AdminLessonViewModel;
-        public LessonsManagementPage(string courseId)
+        public LessonsManagementPage()
         {
             InitializeComponent();
-            BindingContext = new AdminLessonViewModel(courseId);
-            if (ViewModel != null)
-                ViewModel.LessonSelected += OnLessonSelected;
+
+            // ViewModel đã được binding sẵn trong XAML
+            // Nếu DI không tự inject thì có thể tạo bằng code như sau:
+            // this.BindingContext = new AdminLessonViewModel(...);
         }
 
-        private async void OnLessonSelected(object sender, Lesson lesson)
+        // Xử lý sự kiện chọn bài học trong danh sách
+        private void OnLessonSelected(object sender, SelectionChangedEventArgs e)
         {
-            if (lesson != null)
-                await Navigation.PushAsync(new QuestionsManagementPage(lesson.LessonId));
-        }
+            if (BindingContext is not AdminLessonViewModel vm)
+                return;
 
-        private void CollectionView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Nếu bạn muốn click chọn là chuyển trang, bỏ hoặc tuỳ chỉnh tại đây
+            var selectedLesson = e.CurrentSelection?.FirstOrDefault() as LessonModel;
+
+            // Nếu chọn đúng bài học thì cập nhật SelectedLesson trong ViewModel
+            if (selectedLesson != null)
+            {
+                vm.SelectedLesson = selectedLesson;
+            }
+
+            // Bỏ chọn để UI đẹp (không highlight mãi)
+            if (sender is CollectionView collectionView)
+            {
+                collectionView.SelectedItem = null;
+            }
         }
     }
 }

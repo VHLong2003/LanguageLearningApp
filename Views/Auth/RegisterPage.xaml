@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="LanguageLearningApp.Views.Auth.RegisterPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Đăng ký tài khoản"
+    BackgroundColor="#F1F4FB">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="26,36,26,26">
+
+            <Label Text="Đăng ký tài khoản" FontSize="28" FontAttributes="Bold" TextColor="#21264C" HorizontalOptions="Center"/>
+
+            <Entry Placeholder="Email" Keyboard="Email" Text="{Binding Email}" />
+            <Entry Placeholder="Họ và tên" Text="{Binding FullName}" />
+            <Entry Placeholder="Mật khẩu" IsPassword="True" Text="{Binding Password}" />
+            <Entry Placeholder="Nhập lại mật khẩu" IsPassword="True" Text="{Binding ConfirmPassword}" />
+
+            <Button
+                Text="Đăng ký"
+                Command="{Binding RegisterCommand}"
+                IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"
+                FontSize="18"
+                CornerRadius="18"
+                BackgroundColor="#6376E0"
+                TextColor="White"/>
+
+            <Label Text="{Binding ErrorMessage}" TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}" />
+            <Label Text="{Binding SuccessMessage}" TextColor="Green"
+                   IsVisible="{Binding SuccessMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}"/>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

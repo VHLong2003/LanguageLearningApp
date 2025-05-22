@@ -1,18 +1,30 @@
-using LanguageLearningApp.Models;
+﻿using LanguageLearningApp.Services;
 using LanguageLearningApp.ViewModels.User;
 
 namespace LanguageLearningApp.Views.User
 {
     public partial class CourseDetailPage : ContentPage
     {
-        public CourseDetailPage(Course course)
+        private readonly CourseDetailViewModel _viewModel;
+
+        // Không nhận courseId ở đây!
+        public CourseDetailPage(
+            CourseService courseService,
+            LessonService lessonService,
+            ProgressService progressService,
+            UserService userService,
+            LessonProgressService lessonProgressService)
         {
             InitializeComponent();
-            var vm = BindingContext as CourseDetailViewModel;
-            if (vm != null)
-                vm.Course = course;
+            _viewModel = new CourseDetailViewModel(courseService, lessonService, progressService, userService, lessonProgressService);
+            BindingContext = _viewModel;
+        }
+
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+            // Khi property CourseId được Shell gán, ViewModel sẽ tự load data
+            // Nếu muốn: bạn có thể kiểm tra và load lại (hoặc không cần)
         }
     }
 }
-
-

@@ -1,23 +1,95 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-       xmlns:views="clr-namespace:LanguageLearningApp.Views.User"
-       x:Class="LanguageLearningApp.AppShell">
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="LanguageLearningApp.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:userViews="clr-namespace:LanguageLearningApp.Views.User"
+    xmlns:adminViews="clr-namespace:LanguageLearningApp.Views.Admin"
+    xmlns:authViews="clr-namespace:LanguageLearningApp.Views.Auth"
+    Shell.FlyoutBehavior="Disabled">
 
-    <FlyoutItem Title="Courses" Icon="courses.png">
-        <ShellContent ContentTemplate="{DataTemplate views:CoursesView}" />
-    </FlyoutItem>
+    <!-- Authentication Shell -->
+    <ShellContent
+        Title="Login"
+        ContentTemplate="{DataTemplate authViews:LoginPage}"
+        Route="login" />
 
-    <FlyoutItem Title="Leaderboard" Icon="leaderboard.png">
-        <ShellContent ContentTemplate="{DataTemplate views:LeaderboardView}" />
-    </FlyoutItem>
+    <!-- User Shell -->
+    <TabBar Route="user">
+        <Tab Title="Home" Icon="home_icon.png">
+            <ShellContent 
+                Title="Home"
+                ContentTemplate="{DataTemplate userViews:HomeUserPage}"
+                Route="home" />
+        </Tab>
 
-    <FlyoutItem Title="Shop" Icon="shop.png">
-        <ShellContent ContentTemplate="{DataTemplate views:ShopView}" />
-    </FlyoutItem>
+        <Tab Title="Courses" Icon="courses_icon.png">
+            <ShellContent 
+                Title="Courses"
+                ContentTemplate="{DataTemplate userViews:CoursesPage}"
+                Route="courses" />
+        </Tab>
 
-    <TabBar>
-        <ShellContent Title="Profile" Icon="profile.png" ContentTemplate="{DataTemplate views:ProfileView}" />
+        <Tab Title="Leaderboard" Icon="leaderboard_icon.png">
+            <ShellContent 
+                Title="Leaderboard"
+                ContentTemplate="{DataTemplate userViews:LeaderboardPage}"
+                Route="leaderboard" />
+        </Tab>
+        
+        <Tab Title="Progress" Icon="progress_icon.png">
+            <ShellContent 
+                Title="My Progress"
+                ContentTemplate="{DataTemplate userViews:LessonProgressPage}"
+                Route="progress" />
+        </Tab>
+
+
+        <Tab Title="Shop" Icon="shop_icon.png">
+            <ShellContent 
+                Title="Shop"
+                ContentTemplate="{DataTemplate userViews:ShopPage}"
+                Route="shop" />
+        </Tab>
+
+        <Tab Title="Profile" Icon="profile_icon.png">
+            <ShellContent 
+                Title="Profile"
+                ContentTemplate="{DataTemplate userViews:ProfilePage}"
+                Route="profile" />
+        </Tab>
+    </TabBar>
+
+    <!-- Admin Shell -->
+    <TabBar Route="admin">
+        <Tab Title="Dashboard" Icon="home.png">
+            <ShellContent 
+                Title="Dashboard"
+                ContentTemplate="{DataTemplate adminViews:HomeAdminPage}"
+                Route="adminHome" />
+        </Tab>
+
+        <Tab Title="Users" Icon="users_icon.png">
+            <ShellContent 
+                Title="Users"
+                ContentTemplate="{DataTemplate adminViews:UsersManagementPage}"
+                Route="users" />
+        </Tab>
+
+        <Tab Title="Courses" Icon="courses_icon.png">
+            <ShellContent 
+                Title="Courses"
+                ContentTemplate="{DataTemplate adminViews:CoursesManagementPage}"
+                Route="adminCourses" />
+        </Tab>
+
+
+        <Tab Title="Shop" Icon="shop.png">
+            <ShellContent 
+                Title="Shop"
+                ContentTemplate="{DataTemplate adminViews:ShopManagementPage}"
+                Route="adminShop" />
+        </Tab>
     </TabBar>
 
 </Shell>

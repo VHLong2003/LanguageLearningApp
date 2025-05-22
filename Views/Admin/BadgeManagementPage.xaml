@@ -1,66 +1,249 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage
-    x:Class="LanguageLearningApp.Views.Admin.BadgeManagementPage"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:vm="clr-namespace:LanguageLearningApp.ViewModels.Admin"
-    x:Name="ThisPage">
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.Admin"
+             xmlns:models="clr-namespace:LanguageLearningApp.Models"
+             x:Class="LanguageLearningApp.Views.Admin.BadgeManagementPage"
+             Title="Quản lý Huy hiệu">
 
-    <ContentPage.BindingContext>
-        <vm:AdminBadgeViewModel />
-    </ContentPage.BindingContext>
+    <Grid RowDefinitions="Auto,*,Auto">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="12">
-            <Label Text="Quản lý Badge/Reward" FontAttributes="Bold" FontSize="24" HorizontalOptions="Center"/>
-            <Label Text="Tên badge" />
-            <Entry Text="{Binding SelectedBadge.Name}" Placeholder="Nhập tên badge" />
-            <Label Text="Mô tả" />
-            <Editor Text="{Binding SelectedBadge.Description}" Placeholder="Nhập mô tả" AutoSize="TextChanges" HeightRequest="60"/>
-            <Label Text="URL Icon" />
-            <Entry Text="{Binding SelectedBadge.IconUrl}" Placeholder="https://icon.com/image.png" />
-            <Label Text="Điểm/cột mốc cần đạt" />
-            <Entry Text="{Binding SelectedBadge.RequiredPoints}" Keyboard="Numeric" Placeholder="Số điểm/cột mốc" />
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="15">
+            <StackLayout Grid.Column="0">
+                <Label Text="Quản lý huy hiệu"
+                       FontSize="18"
+                       FontAttributes="Bold" />
+                <Label Text="{Binding Badges.Count, StringFormat='Tổng số huy hiệu: {0}'}" />
+            </StackLayout>
 
-            <Button Text="Thêm/Sửa badge" Command="{Binding AddOrUpdateBadgeCommand}" />
+            <Button Text="Thêm huy hiệu"
+                    Grid.Column="1"
+                    Command="{Binding CreateBadgeCommand}"
+                    BackgroundColor="#3498db"
+                    TextColor="White" />
+        </Grid>
 
-            <Label Text="{Binding ErrorMessage}" TextColor="Red"
-                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}" />
-
-            <Label Text="Danh sách badge" FontAttributes="Bold" FontSize="18" Margin="0,10,0,0"/>
-            <CollectionView ItemsSource="{Binding Badges}" HeightRequest="400">
-                <CollectionView.EmptyView>
-                    <Label Text="Chưa có badge nào." HorizontalOptions="Center" VerticalOptions="Center"/>
-                </CollectionView.EmptyView>
+        <!-- Danh sách huy hiệu -->
+        <RefreshView Grid.Row="1"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Badges}"
+                            SelectionMode="Single"
+                            SelectionChanged="OnBadgeSelected">
                 <CollectionView.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="models:BadgeModel">
                         <SwipeView>
                             <SwipeView.RightItems>
                                 <SwipeItems>
-                                    <SwipeItem Text="Sửa"
-                                               BackgroundColor="Orange"
-                                               Command="{Binding BindingContext.EditBadgeCommand, Source={x:Reference ThisPage}}"
-                                               CommandParameter="{Binding .}" />
-                                    <SwipeItem Text="Xoá"
+                                    <SwipeItem Text="Xóa"
                                                BackgroundColor="Red"
-                                               Command="{Binding BindingContext.DeleteBadgeCommand, Source={x:Reference ThisPage}}"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminBadgeViewModel}}, Path=DeleteBadgeCommand}"
                                                CommandParameter="{Binding .}" />
                                 </SwipeItems>
                             </SwipeView.RightItems>
-                            <Grid Padding="8" Margin="0,0,0,6" BackgroundColor="White">
-                                <HorizontalStackLayout>
-                                    <Image Source="{Binding IconUrl}" HeightRequest="40" WidthRequest="40"/>
-                                    <VerticalStackLayout Padding="8,0,0,0">
-                                        <Label Text="{Binding Name}" FontAttributes="Bold"/>
-                                        <Label Text="{Binding Description}" LineBreakMode="TailTruncation" FontSize="12"/>
-                                        <Label Text="Cột mốc: {Binding RequiredPoints}" FontSize="12" TextColor="Gray"/>
-                                    </VerticalStackLayout>
-                                </HorizontalStackLayout>
+
+                            <Grid Padding="10" ColumnDefinitions="Auto,*,Auto">
+                                <!-- Icon huy hiệu -->
+                                <Frame Grid.Column="0"
+                                       CornerRadius="30"
+                                       HeightRequest="60"
+                                       WidthRequest="60"
+                                       Padding="0"
+                                       BorderColor="{Binding Tier, Converter={StaticResource BadgeTierToColorConverter}}">
+                                    <Image Source="{Binding IconUrl, TargetNullValue='default_badge.png'}"
+                                           Aspect="AspectFill" />
+                                </Frame>
+
+                                <!-- Thông tin huy hiệu -->
+                                <StackLayout Grid.Column="1"
+                                             Margin="10,0"
+                                             VerticalOptions="Center">
+                                    <Label Text="{Binding Title}"
+                                           FontAttributes="Bold" />
+
+                                    <Label Text="{Binding Description}"
+                                           TextColor="Gray"
+                                           FontSize="Small"
+                                           LineBreakMode="TailTruncation"
+                                           MaxLines="1" />
+
+                                    <StackLayout Orientation="Horizontal" Spacing="10">
+                                        <Label Text="{Binding Criteria, StringFormat='Tiêu chí: {0}'}"
+                                               FontSize="12"
+                                               TextColor="#3498db" />
+
+                                        <Label Text="{Binding RequiredValue, StringFormat='Giá trị: {0}'}"
+                                               FontSize="12"
+                                               TextColor="#3498db" />
+                                    </StackLayout>
+                                </StackLayout>
+
+                                <!-- Bậc & thưởng -->
+                                <StackLayout Grid.Column="2" VerticalOptions="Center" HorizontalOptions="End">
+                                    <Label Text="{Binding Tier}"
+                                           TextColor="{Binding Tier, Converter={StaticResource BadgeTierToColorConverter}}"
+                                           FontAttributes="Bold"
+                                           HorizontalOptions="End" />
+
+                                    <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="End">
+                                        <Label Text="{Binding PointsReward, StringFormat='+{0} điểm'}"
+                                               FontSize="12"
+                                               TextColor="Green" />
+
+                                        <Label Text="{Binding CoinsReward, StringFormat='+{0} xu'}"
+                                               FontSize="12"
+                                               TextColor="Orange" />
+                                    </StackLayout>
+
+                                    <Label Text="Ẩn"
+                                           FontSize="10"
+                                           TextColor="Red"
+                                           HorizontalOptions="End"
+                                           IsVisible="{Binding IsHidden}" />
+                                </StackLayout>
                             </Grid>
                         </SwipeView>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <StackLayout VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="10"
+                                 Padding="20">
+                        <Image Source="no_badges.png"
+                               HeightRequest="100"
+                               WidthRequest="100" />
+                        <Label Text="Chưa có huy hiệu nào"
+                               HorizontalOptions="Center" />
+                        <Button Text="Tạo huy hiệu đầu tiên"
+                                Command="{Binding CreateBadgeCommand}"
+                                BackgroundColor="#3498db"
+                                TextColor="White"
+                                HorizontalOptions="Center" />
+                    </StackLayout>
+                </CollectionView.EmptyView>
             </CollectionView>
-        </VerticalStackLayout>
-    </ScrollView>
+        </RefreshView>
+
+        <!-- Form chỉnh sửa/tạo huy hiệu -->
+        <Frame Grid.Row="0" Grid.RowSpan="3"
+               IsVisible="{Binding IsEditing}"
+               BackgroundColor="White"
+               HasShadow="True"
+               CornerRadius="10"
+               Margin="20">
+            <ScrollView>
+                <StackLayout Spacing="15" Padding="10">
+                    <Label Text="{Binding IsNewBadge, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Tạo huy hiệu mới|Chỉnh sửa huy hiệu'}"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+
+                    <!-- Lỗi nhập liệu -->
+                    <Label Text="{Binding ErrorMessage}"
+                           TextColor="Red"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}"
+                           HorizontalOptions="Center" />
+
+                    <!-- Icon -->
+                    <Frame BorderColor="{Binding Tier, Converter={StaticResource BadgeTierToColorConverter}}"
+                           CornerRadius="50"
+                           HeightRequest="100"
+                           WidthRequest="100"
+                           Padding="0"
+                           IsClippedToBounds="True"
+                           HorizontalOptions="Center">
+                        <Image Source="{Binding IconUrl, TargetNullValue='default_badge.png'}"
+                               Aspect="AspectFill" />
+                    </Frame>
+
+                    <Button Text="Đổi ảnh biểu tượng"
+                            Command="{Binding PickIconCommand}"
+                            HorizontalOptions="Center" />
+
+                    <!-- Thông tin huy hiệu -->
+                    <StackLayout>
+                        <Label Text="Tên huy hiệu" />
+                        <Entry Text="{Binding Title}"
+                               Placeholder="Nhập tên huy hiệu" />
+                    </StackLayout>
+
+                    <StackLayout>
+                        <Label Text="Mô tả" />
+                        <Entry Text="{Binding Description}"
+                               Placeholder="Nhập mô tả" />
+                    </StackLayout>
+
+                    <StackLayout>
+                        <Label Text="Tiêu chí" />
+                        <Picker ItemsSource="{Binding CriteriaTypes}"
+                                SelectedItem="{Binding Criteria}"
+                                Title="Chọn tiêu chí" />
+                    </StackLayout>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10">
+                        <StackLayout Grid.Row="0" Grid.Column="0">
+                            <Label Text="Giá trị đạt được" />
+                            <Entry Text="{Binding RequiredValue}"
+                                   Keyboard="Numeric"
+                                   Placeholder="Nhập giá trị" />
+                        </StackLayout>
+
+                        <StackLayout Grid.Row="0" Grid.Column="1">
+                            <Label Text="Bậc huy hiệu" />
+                            <Picker ItemsSource="{Binding BadgeTiers}"
+                                    SelectedItem="{Binding Tier}" />
+                        </StackLayout>
+
+                        <StackLayout Grid.Row="1" Grid.Column="0">
+                            <Label Text="Thưởng điểm" />
+                            <Entry Text="{Binding PointsReward}"
+                                   Keyboard="Numeric"
+                                   Placeholder="Điểm thưởng" />
+                        </StackLayout>
+
+                        <StackLayout Grid.Row="1" Grid.Column="1">
+                            <Label Text="Thưởng xu" />
+                            <Entry Text="{Binding CoinsReward}"
+                                   Keyboard="Numeric"
+                                   Placeholder="Xu thưởng" />
+                        </StackLayout>
+                    </Grid>
+
+                    <StackLayout Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding IsHidden}" />
+                        <Label Text="Huy hiệu ẩn (thưởng bất ngờ)"
+                               VerticalOptions="Center" />
+                    </StackLayout>
+
+                    <StackLayout Orientation="Horizontal"
+                                 HorizontalOptions="Center"
+                                 Spacing="20"
+                                 Margin="0,10,0,0">
+                        <Button Text="Lưu"
+                                Command="{Binding SaveBadgeCommand}"
+                                BackgroundColor="#2ecc71"
+                                TextColor="White"
+                                WidthRequest="120" />
+
+                        <Button Text="Hủy"
+                                Command="{Binding CancelEditCommand}"
+                                BackgroundColor="#e74c3c"
+                                TextColor="White"
+                                WidthRequest="120" />
+                    </StackLayout>
+                </StackLayout>
+            </ScrollView>
+        </Frame>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.RowSpan="3"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="#3498db"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+    </Grid>
 </ContentPage>

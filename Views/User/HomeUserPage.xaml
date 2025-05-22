@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.User"
+             xmlns:models="clr-namespace:LanguageLearningApp.Models"
+             x:Class="LanguageLearningApp.Views.User.HomeUserPage"
+             Title="Trang chủ">
+
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <StackLayout Spacing="20"
+                         Padding="20">
+
+                <!-- Khu vực chào mừng -->
+                <Frame CornerRadius="10"
+                       Padding="15"
+                       BorderColor="#3498db"
+                       HasShadow="True">
+                    <StackLayout Spacing="10">
+                        <Label Text="{Binding WelcomeMessage}"
+                               FontSize="20"
+                               FontAttributes="Bold" />
+                        <Label Text="{Binding DailyMotivation}" />
+
+                        <Grid ColumnDefinitions="Auto,*,Auto"
+                              RowDefinitions="Auto,Auto">
+                            <Label Text="Chuỗi ngày học liên tục:"
+                                   Grid.Column="0"
+                                   Grid.Row="0" />
+                            <Label Text="{Binding CurrentStreak, StringFormat='{0} ngày'}"
+                                   FontAttributes="Bold"
+                                   Grid.Column="1"
+                                   Grid.Row="0" />
+
+                            <Image Source="streak.png"
+                                   HeightRequest="20"
+                                   WidthRequest="20"
+                                   Grid.Column="2"
+                                   Grid.Row="0" />
+
+                            <Label Text="Tổng điểm:"
+                                   Grid.Column="0"
+                                   Grid.Row="1" />
+                            <Label Text="{Binding TotalPoints}"
+                                   FontAttributes="Bold"
+                                   Grid.Column="1"
+                                   Grid.Row="1" />
+
+                            <Image Source="points.png"
+                                   HeightRequest="20"
+                                   WidthRequest="20"
+                                   Grid.Column="2"
+                                   Grid.Row="1" />
+                        </Grid>
+
+                        <!-- Tiến độ mục tiêu ngày -->
+                        <StackLayout Spacing="5" Margin="0,10,0,0">
+                            <Label Text="Tiến độ mục tiêu ngày" FontAttributes="Bold" />
+                            <ProgressBar Progress="{Binding DailyGoalProgress}" />
+                            <Label Text="{Binding DailyGoalMessage}"
+                                   HorizontalOptions="Center" />
+                        </StackLayout>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Tiếp tục học -->
+                <StackLayout Spacing="10"
+                           IsVisible="{Binding HasCurrentCourse}">
+                    <Label Text="Tiếp tục học"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <Frame Padding="0"
+                           HasShadow="True"
+                           CornerRadius="10">
+                        <Grid RowDefinitions="100"
+                              ColumnDefinitions="120,*">
+                            <Image Source="{Binding CurrentCourse.ImageUrl, TargetNullValue='default_course.png'}"
+                                   Aspect="AspectFill"
+                                   Grid.Column="0" />
+
+                            <StackLayout Grid.Column="1"
+                                      Padding="10"
+                                      VerticalOptions="Center">
+                                <Label Text="{Binding CurrentCourse.Title}"
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding CurrentLessonTitle}" />
+                                <ProgressBar Progress="{Binding CourseProgress}" />
+                                <Label Text="{Binding CourseProgressText}" />
+                            </StackLayout>
+
+                            <Button Text="Tiếp tục"
+                                    Command="{Binding ContinueLearningCommand}"
+                                    Grid.Column="1"
+                                    HorizontalOptions="End"
+                                    VerticalOptions="End"
+                                    Margin="0,0,10,10" />
+                        </Grid>
+                    </Frame>
+                </StackLayout>
+
+                <!-- Khoá học đề xuất -->
+                <StackLayout Spacing="10">
+                    <Label Text="Khoá học đề xuất"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding RecommendedCourses}"
+                                  HeightRequest="180"
+                                  SelectionMode="Single"
+                                  SelectionChanged="OnCourseSelected">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal"
+                                               ItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:CourseModel">
+                                <Frame WidthRequest="150"
+                                       Padding="0"
+                                       HasShadow="True"
+                                       CornerRadius="10">
+                                    <Grid RowDefinitions="100,*">
+                                        <Image Source="{Binding ImageUrl, TargetNullValue='default_course.png'}"
+                                               Aspect="AspectFill"
+                                               Grid.Row="0" />
+
+                                        <StackLayout Grid.Row="1"
+                                                    Padding="10">
+                                            <Label Text="{Binding Title}"
+                                                   FontAttributes="Bold"
+                                                   MaxLines="1" />
+                                            <Label Text="{Binding Type, StringFormat='Loại: {0}'}"
+                                                   FontSize="12"
+                                                   TextColor="Gray" />
+                                        </StackLayout>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <StackLayout HorizontalOptions="Center"
+                                         VerticalOptions="Center">
+                                <Label Text="Không có khoá học đề xuất nào"
+                                       TextColor="Gray" />
+                            </StackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </StackLayout>
+
+                <!-- Bảng xếp hạng -->
+                <StackLayout Spacing="10">
+                    <Label Text="Bảng xếp hạng"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <Frame Padding="10"
+                           HasShadow="True"
+                           CornerRadius="10">
+                        <StackLayout Spacing="10">
+                            <Label Text="Top học viên trong tuần"
+                                   FontAttributes="Bold" />
+
+                            <CollectionView ItemsSource="{Binding TopLeaderboard}"
+                                            HeightRequest="150">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:LeaderboardModel">
+                                        <Grid ColumnDefinitions="Auto,Auto,*,Auto"
+                                              Padding="5">
+                                            <Label Text="{Binding Rank}"
+                                                   FontAttributes="Bold"
+                                                   VerticalOptions="Center"
+                                                   Grid.Column="0" />
+
+                                            <Frame Grid.Column="1" 
+                                                   CornerRadius="15"
+                                                   HeightRequest="30"
+                                                   WidthRequest="30" 
+                                                   Padding="0"
+                                                   IsClippedToBounds="True"
+                                                   Margin="5,0,10,0">
+                                                <Image Source="{Binding AvatarUrl, TargetNullValue='default_avatar.png'}"
+                                                       Aspect="AspectFill" />
+                                            </Frame>
+
+                                            <Label Text="{Binding UserName}"
+                                                   VerticalOptions="Center"
+                                                   Grid.Column="2" />
+
+                                            <StackLayout Grid.Column="3"
+                                                         Orientation="Horizontal">
+                                                <Label Text="{Binding TotalPoints}"
+                                                       FontAttributes="Bold"
+                                                       VerticalOptions="Center" />
+                                                <Image Source="points.png"
+                                                       HeightRequest="15"
+                                                       WidthRequest="15"
+                                                       VerticalOptions="Center"
+                                                       Margin="5,0,0,0" />
+                                            </StackLayout>
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+
+                                <CollectionView.EmptyView>
+                                    <Label Text="Chưa có dữ liệu bảng xếp hạng"
+                                           TextColor="Gray"
+                                           HorizontalOptions="Center" />
+                                </CollectionView.EmptyView>
+                            </CollectionView>
+
+                            <Button Text="Xem bảng xếp hạng đầy đủ"
+                                    Command="{Binding ViewLeaderboardCommand}"
+                                    BackgroundColor="#3498db"
+                                    TextColor="White" />
+                        </StackLayout>
+                    </Frame>
+                </StackLayout>
+
+                <!-- Thành tích gần đây -->
+                <StackLayout Spacing="10"
+                             IsVisible="{Binding HasRecentBadges}">
+                    <Label Text="Thành tích gần đây"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding RecentBadges}"
+                                    HeightRequest="110">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal"
+                                               ItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:BadgeModel">
+                                <Frame CornerRadius="50"
+                                       WidthRequest="80"
+                                       HeightRequest="80"
+                                       Padding="5"
+                                       HasShadow="True"
+                                       BorderColor="{Binding Tier, Converter={StaticResource BadgeTierToColorConverter}}">
+                                    <StackLayout>
+                                        <Image Source="{Binding IconUrl, TargetNullValue='default_badge.png'}"
+                                               HeightRequest="50"
+                                               WidthRequest="50"
+                                               HorizontalOptions="Center" />
+                                        <Label Text="{Binding Title}"
+                                               FontSize="10"
+                                               LineBreakMode="NoWrap"
+                                               HorizontalOptions="Center" />
+                                    </StackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </StackLayout>
+        </ScrollView>
+    </RefreshView>
+
+</ContentPage>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.User"
+             x:Class="LanguageLearningApp.Views.User.LessonProgressPage"
+             Title="Tiến độ học tập">
+
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <StackLayout Padding="20" Spacing="20">
+
+                <!-- Tiêu đề tổng quan -->
+                <Frame BackgroundColor="{StaticResource PrimaryColor}"
+                       CornerRadius="10"
+                       Padding="20">
+                    <StackLayout>
+                        <Label Text="Tiến độ học tập của bạn"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="White"
+                               HorizontalOptions="Center" />
+
+                        <Grid ColumnDefinitions="*,*,*" Margin="0,15,0,0">
+                            <!-- Tổng điểm -->
+                            <StackLayout Grid.Column="0" HorizontalOptions="Center">
+                                <Label Text="{Binding TotalPoints}"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                                <Label Text="Điểm"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                            </StackLayout>
+
+                            <!-- Tiến độ tổng -->
+                            <StackLayout Grid.Column="1" HorizontalOptions="Center">
+                                <Label Text="{Binding OverallProgress, StringFormat='{0:P0}'}"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                                <Label Text="Hoàn thành"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                            </StackLayout>
+
+                            <!-- Bài học đã hoàn thành -->
+                            <StackLayout Grid.Column="2" HorizontalOptions="Center">
+                                <Label Text="{Binding TotalCompletedLessons}"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                                <Label Text="Bài học"
+                                       TextColor="White"
+                                       HorizontalOptions="Center" />
+                            </StackLayout>
+                        </Grid>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Danh sách tiến độ từng khoá học -->
+                <Label Text="Các khoá học của bạn"
+                       FontSize="18"
+                       FontAttributes="Bold" />
+
+                <CollectionView ItemsSource="{Binding Courses}">
+                    <CollectionView.EmptyView>
+                        <Label Text="Bạn chưa bắt đầu khoá học nào. Hãy bắt đầu học để xem tiến độ của mình!"
+                               TextColor="Gray"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </CollectionView.EmptyView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame Margin="0,0,0,10"
+                                   Padding="15"
+                                   BorderColor="{StaticResource BorderColor}"
+                                   HasShadow="True"
+                                   CornerRadius="10">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <!-- Ảnh khoá học -->
+                                    <Frame Grid.Column="0"
+                                           CornerRadius="10"
+                                           HeightRequest="80"
+                                           WidthRequest="80"
+                                           Padding="0"
+                                           IsClippedToBounds="True"
+                                           VerticalOptions="Center">
+                                        <Image Source="{Binding ImageUrl, TargetNullValue='default_course.png'}"
+                                               Aspect="AspectFill" />
+                                    </Frame>
+
+                                    <!-- Thông tin khoá học -->
+                                    <StackLayout Grid.Column="1"
+                                               Margin="15,0,0,0"
+                                               Spacing="5">
+                                        <Label Text="{Binding Title}"
+                                               FontAttributes="Bold" />
+
+                                        <Label Text="{Binding Type}"
+                                               FontSize="12"
+                                               TextColor="Gray" />
+
+                                        <ProgressBar Progress="{Binding Progress}"
+                                                     ProgressColor="{StaticResource PrimaryColor}" />
+
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Label Text="{Binding Progress, StringFormat='{0:P0} hoàn thành'}"
+                                                   Grid.Column="0"
+                                                   FontSize="12" />
+
+                                            <Label Text="{Binding LessonProgressText}"
+                                                    Grid.Column="1"
+                                                    FontSize="12" />
+
+                                        </Grid>
+
+                                        <Button Text="Tiếp tục học"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:LessonProgressViewModel}}, Path=ViewCourseCommand}"
+                                                CommandParameter="{Binding CourseId}"
+                                                Style="{StaticResource PrimaryButton}"
+                                                HeightRequest="35"
+                                                FontSize="14"
+                                                HorizontalOptions="End" />
+                                    </StackLayout>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </StackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

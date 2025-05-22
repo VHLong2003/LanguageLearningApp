@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.User"
+             xmlns:models="clr-namespace:LanguageLearningApp.Models"
+             x:Class="LanguageLearningApp.Views.User.ProfilePage"
+             Title="Hồ sơ cá nhân">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <StackLayout Padding="20" Spacing="20">
+
+                <!-- Header Hồ sơ -->
+                <Grid RowDefinitions="Auto"
+                      ColumnDefinitions="Auto,*,Auto"
+                      Margin="0,10">
+
+                    <!-- Ảnh đại diện -->
+                    <Frame Grid.Column="0"
+                           CornerRadius="50"
+                           HeightRequest="100"
+                           WidthRequest="100"
+                           Padding="0"
+                           IsClippedToBounds="True">
+                        <Image Source="{Binding User.AvatarUrl}"
+                               Aspect="AspectFill" />
+                    </Frame>
+
+                    <!-- Thông tin người dùng -->
+                    <StackLayout Grid.Column="1"
+                                 Margin="15,0"
+                                 VerticalOptions="Center">
+                        <Label Text="{Binding User.FullName}"
+                               FontSize="22"
+                               FontAttributes="Bold" />
+
+                        <Label Text="{Binding User.Email}"
+                               TextColor="Gray" />
+
+                        <StackLayout Orientation="Horizontal"
+                                     Spacing="5">
+                            <Label Text="Cấp độ:"
+                                   FontAttributes="Bold" />
+                            <Label Text="{Binding User.Points, Converter={StaticResource PointsToLevelConverter}}" />
+                        </StackLayout>
+
+                        <StackLayout Orientation="Horizontal"
+                                     Spacing="5">
+                            <Label Text="Chuỗi ngày:"
+                                   FontAttributes="Bold" />
+                            <Label Text="{Binding User.CurrentStreak, StringFormat='{0} ngày'}" />
+                        </StackLayout>
+                    </StackLayout>
+
+                    <!-- Nút thao tác (Bạn bè/Sửa) -->
+                    <Button Grid.Column="2"
+                            Text="{Binding IsViewingOtherUser, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Kết bạn|Chỉnh sửa'}"
+                            Command="{Binding ProfileActionCommand}"
+                            HeightRequest="40"
+                            VerticalOptions="Start" />
+
+                </Grid>
+
+                <!-- Thông báo trạng thái -->
+                <Label Text="{Binding StatusMessage}"
+                       TextColor="Red"
+                       IsVisible="{Binding StatusMessage, Converter={StaticResource StringToBoolConverter}}"
+                       HorizontalOptions="Center" />
+
+                <!-- Form chỉnh sửa hồ sơ -->
+                <Frame IsVisible="{Binding IsEditing}"
+                       BackgroundColor="#f5f5f5"
+                       Padding="15"
+                       CornerRadius="10"
+                       HasShadow="False">
+                    <StackLayout Spacing="15">
+
+                        <Label Text="Chỉnh sửa hồ sơ"
+                               FontSize="18"
+                               FontAttributes="Bold" />
+
+                        <StackLayout>
+                            <Label Text="Họ và tên" />
+                            <Entry Text="{Binding FullName}"
+                                   Placeholder="Nhập họ tên của bạn" />
+                        </StackLayout>
+
+                        <StackLayout>
+                            <Label Text="Email" />
+                            <Entry Text="{Binding Email}"
+                                   IsEnabled="False"
+                                   TextColor="Gray" />
+                        </StackLayout>
+
+                        <StackLayout>
+                            <Label Text="Ảnh đại diện" />
+                            <Button Text="Đổi ảnh đại diện"
+                                    Command="{Binding ChangeAvatarCommand}" />
+                        </StackLayout>
+
+                        <Label Text="Đổi mật khẩu (không bắt buộc)"
+                               FontAttributes="Bold"
+                               Margin="0,10,0,0" />
+
+                        <StackLayout>
+                            <Label Text="Mật khẩu hiện tại" />
+                            <Entry Text="{Binding OldPassword}"
+                                   IsPassword="True"
+                                   Placeholder="Nhập mật khẩu hiện tại" />
+                        </StackLayout>
+
+                        <StackLayout>
+                            <Label Text="Mật khẩu mới" />
+                            <Entry Text="{Binding NewPassword}"
+                                   IsPassword="True"
+                                   Placeholder="Nhập mật khẩu mới" />
+                        </StackLayout>
+
+                        <StackLayout>
+                            <Label Text="Xác nhận mật khẩu mới" />
+                            <Entry Text="{Binding ConfirmPassword}"
+                                   IsPassword="True"
+                                   Placeholder="Xác nhận mật khẩu mới" />
+                        </StackLayout>
+
+                        <StackLayout Orientation="Horizontal"
+                                     HorizontalOptions="Center"
+                                     Spacing="15"
+                                     Margin="0,15,0,0">
+                            <Button Text="Lưu"
+                                    Command="{Binding SaveProfileCommand}"
+                                    BackgroundColor="#3498db"
+                                    TextColor="White" />
+                            <Button Text="Hủy"
+                                    Command="{Binding CancelEditCommand}"
+                                    BackgroundColor="LightGray" />
+                        </StackLayout>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Thống kê -->
+                <Frame BorderColor="#3498db"
+                       CornerRadius="10"
+                       HasShadow="True">
+                    <Grid ColumnDefinitions="*,*,*"
+                          RowDefinitions="Auto,Auto">
+
+                        <Label Text="Thống kê"
+                               FontAttributes="Bold"
+                               Grid.ColumnSpan="3"
+                               HorizontalOptions="Center"
+                               Margin="0,0,0,10" />
+
+                        <StackLayout Grid.Row="1"
+                                     Grid.Column="0"
+                                     HorizontalOptions="Center"
+                                     Spacing="5">
+                            <Label Text="Điểm"
+                                   FontAttributes="Bold" />
+                            <Label Text="{Binding User.Points}"
+                                   HorizontalOptions="Center"
+                                   FontSize="22" />
+                        </StackLayout>
+
+                        <StackLayout Grid.Row="1"
+                                     Grid.Column="1"
+                                     HorizontalOptions="Center"
+                                     Spacing="5">
+                            <Label Text="Huy hiệu"
+                                   FontAttributes="Bold" />
+                            <Label Text="{Binding Badges.Count}"
+                                   HorizontalOptions="Center"
+                                   FontSize="22" />
+                        </StackLayout>
+
+                        <StackLayout Grid.Row="1"
+                                     Grid.Column="2"
+                                     HorizontalOptions="Center"
+                                     Spacing="5">
+                            <Label Text="Xu"
+                                   FontAttributes="Bold" />
+                            <Label Text="{Binding User.Coins}"
+                                   HorizontalOptions="Center"
+                                   FontSize="22" />
+                        </StackLayout>
+                    </Grid>
+                </Frame>
+
+                <!-- Huy hiệu -->
+                <StackLayout Spacing="10">
+                    <Label Text="Danh hiệu"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding Badges}"
+                                   HeightRequest="120">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal"
+                                              ItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:BadgeModel">
+                                <Frame CornerRadius="10"
+                                       WidthRequest="100"
+                                       Padding="5"
+                                       HasShadow="True"
+                                       BorderColor="{Binding Tier, Converter={StaticResource BadgeTierToColorConverter}}">
+                                    <StackLayout>
+                                        <Image Source="{Binding IconUrl}"
+                                               HeightRequest="50"
+                                               WidthRequest="50"
+                                               HorizontalOptions="Center" />
+                                        <Label Text="{Binding Title}"
+                                               FontSize="12"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="1"
+                                               HorizontalOptions="Center" />
+                                        <Label Text="{Binding Tier}"
+                                               FontSize="10"
+                                               TextColor="Gray"
+                                               HorizontalOptions="Center" />
+                                    </StackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <Label Text="Chưa có danh hiệu. Hãy hoàn thành bài học để nhận huy hiệu!"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   TextColor="Gray" />
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </StackLayout>
+
+                <!-- Tiến trình gần đây -->
+                <StackLayout Spacing="10">
+                    <Label Text="Hoạt động gần đây"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding RecentProgress}"
+                                   HeightRequest="200">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ProgressModel">
+                                <Frame Margin="0,5"
+                                       BorderColor="#e0e0e0"
+                                       CornerRadius="10"
+                                       HasShadow="False">
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          RowDefinitions="Auto,Auto,Auto">
+
+                                        <Label Text="{Binding LessonId, Converter={StaticResource LessonIdToTitleConverter}}"
+                                               FontAttributes="Bold"
+                                               Grid.Column="0"
+                                               Grid.Row="0" />
+
+                                        <Label Text="{Binding CompletedDate, StringFormat='{0:g}'}"
+                                               TextColor="Gray"
+                                               FontSize="12"
+                                               Grid.Column="0"
+                                               Grid.Row="1" />
+
+                                        <ProgressBar Progress="{Binding PercentComplete, Converter={StaticResource PercentToDecimalConverter}}"
+                                                     ProgressColor="#3498db"
+                                                     Grid.Column="0"
+                                                     Grid.Row="2"
+                                                     HeightRequest="10" />
+
+                                        <StackLayout Grid.Column="1"
+                                                     Grid.RowSpan="3"
+                                                     VerticalOptions="Center">
+                                            <Label Text="{Binding EarnedPoints, StringFormat='+{0}'}"
+                                                   TextColor="Green"
+                                                   FontAttributes="Bold" />
+                                        </StackLayout>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <Label Text="Chưa có hoạt động nào gần đây. Bắt đầu học để thấy tiến trình của bạn!"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   TextColor="Gray" />
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </StackLayout>
+
+                <!-- Nút đăng xuất -->
+                <Button Text="Đăng xuất"
+                        Command="{Binding LogoutCommand}"
+                        BackgroundColor="#e74c3c"
+                        TextColor="White"
+                        Margin="0,20,0,20"
+                        IsVisible="{Binding IsViewingOtherUser, Converter={StaticResource InvertBoolConverter}}" />
+
+                <!-- Đang tải -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   HorizontalOptions="Center" />
+
+            </StackLayout>
+        </ScrollView>
+    </RefreshView>
+
+</ContentPage>
