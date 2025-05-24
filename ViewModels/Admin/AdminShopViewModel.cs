@@ -24,7 +24,6 @@ namespace LanguageLearningApp.ViewModels.Admin
         private ObservableCollection<ItemType> _itemTypes;
         private ItemType _selectedType;
 
-        // Form fields for editing/creating item
         private string _itemId;
         private string _title;
         private string _description;
@@ -50,7 +49,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             {
                 if (SetProperty(ref _selectedItem, value) && value != null)
                 {
-                    // Update form fields with selected item
                     ItemId = value.ItemId;
                     Title = value.Title;
                     Description = value.Description;
@@ -117,7 +115,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             }
         }
 
-        // Form properties
         public string ItemId
         {
             get => _itemId;
@@ -184,7 +181,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             set => SetProperty(ref _durationDays, value);
         }
 
-        // Commands
         public ICommand RefreshCommand { get; }
         public ICommand CreateItemCommand { get; }
         public ICommand SaveItemCommand { get; }
@@ -193,16 +189,13 @@ namespace LanguageLearningApp.ViewModels.Admin
         public ICommand PickIconCommand { get; }
         public ICommand FilterByTypeCommand { get; }
 
-        public AdminShopViewModel(
-            ShopService shopService,
-            StorageService storageService)
+        public AdminShopViewModel(ShopService shopService, StorageService storageService)
         {
             _shopService = shopService;
             _storageService = storageService;
 
             ShopItems = new ObservableCollection<ShopItemModel>();
 
-            // Available item types
             ItemTypes = new ObservableCollection<ItemType>
             {
                 ItemType.Avatar,
@@ -235,15 +228,15 @@ namespace LanguageLearningApp.ViewModels.Admin
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
-                var items = await _shopService.GetAllShopItemsAsync(idToken);
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("User is not authenticated.");
 
+                var items = await _shopService.GetAllShopItemsAsync(idToken);
                 ShopItems.Clear();
                 foreach (var item in items)
                 {
                     ShopItems.Add(item);
                 }
-
-                // Reset selected type
                 SelectedType = default;
             }
             catch (Exception ex)
@@ -260,7 +253,6 @@ namespace LanguageLearningApp.ViewModels.Admin
         {
             if (type == default)
             {
-                // If no type selected, load all items
                 await LoadAllShopItemsAsync();
                 return;
             }
@@ -272,7 +264,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var items = await _shopService.GetItemsByTypeAsync(type, idToken);
-
                 ShopItems.Clear();
                 foreach (var item in items)
                 {
@@ -291,18 +282,17 @@ namespace LanguageLearningApp.ViewModels.Admin
 
         private void CreateNewItem()
         {
-            // Clear form fields
             ItemId = string.Empty;
             Title = string.Empty;
             Description = string.Empty;
             IconUrl = string.Empty;
-            Price = 100; // Default
-            Type = ItemType.Avatar; // Default
+            Price = 100;
+            Type = ItemType.Avatar;
             IsLimited = false;
             AvailableQuantity = 0;
-            RequiredLevel = 1; // Default
+            RequiredLevel = 1;
             EffectDescription = string.Empty;
-            DurationDays = 0; // Default (permanent)
+            DurationDays = 0;
 
             IsNewItem = true;
             IsEditing = true;
@@ -314,19 +304,31 @@ namespace LanguageLearningApp.ViewModels.Admin
         {
             if (string.IsNullOrWhiteSpace(Title))
             {
-                ErrorMessage = "Title is required";
+                ErrorMessage = "Title is required.";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(Description))
             {
-                ErrorMessage = "Description is required";
+                ErrorMessage = "Description is required.";
                 return;
             }
 
             if (Price < 0)
             {
-                ErrorMessage = "Price must be non-negative";
+                ErrorMessage = "Price must be non-negative.";
+                return;
+            }
+
+            if (RequiredLevel < 0)
+            {
+                ErrorMessage = "Required level cannot be negative.";
+                return;
+            }
+
+            if (IsLimited && AvailableQuantity < 0)
+            {
+                ErrorMessage = "Available quantity cannot be negative.";
                 return;
             }
 
@@ -339,7 +341,6 @@ namespace LanguageLearningApp.ViewModels.Admin
 
                 if (IsNewItem)
                 {
-                    // Create new item
                     var newItem = new ShopItemModel
                     {
                         Title = Title,
@@ -355,44 +356,36 @@ namespace LanguageLearningApp.ViewModels.Admin
                     };
 
                     var itemId = await _shopService.CreateShopItemAsync(newItem, idToken);
-
                     if (!string.IsNullOrEmpty(itemId))
                     {
                         newItem.ItemId = itemId;
                         ShopItems.Add(newItem);
-
-                        // Reset form
                         CancelEdit();
                     }
                     else
                     {
-                        ErrorMessage = "Failed to create shop item";
+                        ErrorMessage = "Failed to create shop item.";
                     }
                 }
                 else
                 {
-                    // Update existing item
-                    if (_selectedItem != null)
+                    if (SelectedItem != null)
                     {
-                        _selectedItem.Title = Title;
-                        _selectedItem.Description = Description;
-                        _selectedItem.IconUrl = IconUrl;
-                        _selectedItem.Price = Price;
-                        _selectedItem.Type = Type;
-                        _selectedItem.IsLimited = IsLimited;
-                        _selectedItem.AvailableQuantity = IsLimited ? AvailableQuantity : 0;
-                        _selectedItem.RequiredLevel = RequiredLevel;
-                        _selectedItem.EffectDescription = EffectDescription;
-                        _selectedItem.DurationDays = DurationDays;
+                        SelectedItem.Title = Title;
+                        SelectedItem.Description = Description;
+                        SelectedItem.IconUrl = IconUrl;
+                        SelectedItem.Price = Price;
+                        SelectedItem.Type = Type;
+                        SelectedItem.IsLimited = IsLimited;
+                        SelectedItem.AvailableQuantity = IsLimited ? AvailableQuantity : 0;
+                        SelectedItem.RequiredLevel = RequiredLevel;
+                        SelectedItem.EffectDescription = EffectDescription;
+                        SelectedItem.DurationDays = DurationDays;
 
-                        var success = await _shopService.UpdateShopItemAsync(_selectedItem, idToken);
-
+                        var success = await _shopService.UpdateShopItemAsync(SelectedItem, idToken);
                         if (success)
                         {
-                            // Reset form
                             CancelEdit();
-
-                            // Reload items to refresh the list
                             if (SelectedType != default)
                                 FilterByType(SelectedType);
                             else
@@ -400,7 +393,7 @@ namespace LanguageLearningApp.ViewModels.Admin
                         }
                         else
                         {
-                            ErrorMessage = "Failed to update shop item";
+                            ErrorMessage = "Failed to update shop item.";
                         }
                     }
                 }
@@ -421,7 +414,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             IsNewItem = false;
             SelectedItem = null;
 
-            // Clear form fields
             ItemId = string.Empty;
             Title = string.Empty;
             Description = string.Empty;
@@ -439,29 +431,29 @@ namespace LanguageLearningApp.ViewModels.Admin
 
         private async Task DeleteItemAsync(ShopItemModel item)
         {
-            if (item == null)
-                return;
+            if (item == null) return;
 
             var confirm = await App.Current.MainPage.DisplayAlert(
                 "Confirm Delete",
                 $"Are you sure you want to delete the item '{item.Title}'?",
                 "Yes", "No");
 
-            if (!confirm)
-                return;
+            if (!confirm) return;
 
             IsLoading = true;
 
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
-                var success = await _shopService.DeleteShopItemAsync(item.ItemId, idToken);
+                if (!string.IsNullOrEmpty(item.IconUrl))
+                {
+                    await _storageService.DeleteImageAsync(item.IconUrl, idToken);
+                }
 
+                var success = await _shopService.DeleteShopItemAsync(item.ItemId, idToken);
                 if (success)
                 {
                     ShopItems.Remove(item);
-
-                    // If the deleted item was being edited, clear the form
                     if (SelectedItem == item)
                     {
                         CancelEdit();
@@ -469,7 +461,7 @@ namespace LanguageLearningApp.ViewModels.Admin
                 }
                 else
                 {
-                    await App.Current.MainPage.DisplayAlert("Error", "Failed to delete shop item", "OK");
+                    await App.Current.MainPage.DisplayAlert("Error", "Failed to delete shop item.", "OK");
                 }
             }
             catch (Exception ex)
@@ -486,7 +478,6 @@ namespace LanguageLearningApp.ViewModels.Admin
         {
             try
             {
-                // Use MAUI file picker
                 var result = await FilePicker.PickAsync(new PickOptions
                 {
                     FileTypes = FilePickerFileType.Images,
@@ -496,25 +487,38 @@ namespace LanguageLearningApp.ViewModels.Admin
                 if (result != null)
                 {
                     IsLoading = true;
-
                     var idToken = LocalStorageHelper.GetItem("idToken");
-                    var iconUrl = await _storageService.UploadImageFromPickerAsync(result, "shop_icons", idToken);
+                    if (string.IsNullOrEmpty(idToken))
+                    {
+                        await App.Current.MainPage.DisplayAlert("Error", "User is not authenticated. Please log in again.", "OK");
+                        return;
+                    }
 
+                    var iconUrl = await _storageService.UploadImageFromPickerAsync(result, "shop_icons", idToken);
                     if (!string.IsNullOrEmpty(iconUrl))
                     {
                         IconUrl = iconUrl;
                     }
                     else
                     {
-                        await App.Current.MainPage.DisplayAlert("Error", "Failed to upload item icon", "OK");
+                        await App.Current.MainPage.DisplayAlert("Error", "Failed to upload item icon. Please check your internet connection or try again.", "OK");
                     }
-
-                    IsLoading = false;
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                var message = ex.Message.Contains("403") ? "Access denied: Please check Firebase Storage rules or your authentication token."
+                    : ex.Message.Contains("401") ? "Authentication failed: Please log in again."
+                    : $"Error uploading icon: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Error", message, "OK");
             }
             catch (Exception ex)
             {
                 await App.Current.MainPage.DisplayAlert("Error", $"Error picking icon: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
     }

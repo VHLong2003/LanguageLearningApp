@@ -26,7 +26,7 @@ namespace LanguageLearningApp.ViewModels.Admin
         private bool _isNewLesson;
         private string _errorMessage;
 
-        // Form fields for editing/creating lesson
+        // Các trường biểu mẫu để chỉnh sửa/tạo bài học
         private string _lessonId;
         private string _title;
         private string _description;
@@ -45,7 +45,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             {
                 if (SetProperty(ref _courseId, value) && !string.IsNullOrEmpty(value))
                 {
-                    // When courseId is set via QueryProperty, load data
                     Task.Run(async () => await LoadCourseAndLessonsAsync());
                 }
             }
@@ -70,7 +69,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             {
                 if (SetProperty(ref _selectedLesson, value) && value != null)
                 {
-                    // Update form fields with selected lesson
                     LessonId = value.LessonId;
                     Title = value.Title;
                     Description = value.Description;
@@ -118,7 +116,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             set => SetProperty(ref _errorMessage, value);
         }
 
-        // Form properties
         public string LessonId
         {
             get => _lessonId;
@@ -179,7 +176,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             set => SetProperty(ref _estimatedMinutes, value);
         }
 
-        // Commands
         public ICommand RefreshCommand { get; }
         public ICommand CreateLessonCommand { get; }
         public ICommand SaveLessonCommand { get; }
@@ -202,7 +198,7 @@ namespace LanguageLearningApp.ViewModels.Admin
 
             Lessons = new ObservableCollection<LessonModel>();
 
-            RefreshCommand = new Command(async () => await LoadLessonsAsync());
+            RefreshCommand = new Command(async () => await LoadLessonsForCourseAsync());
             CreateLessonCommand = new Command(CreateNewLesson);
             SaveLessonCommand = new Command(async () => await SaveLessonAsync());
             CancelEditCommand = new Command(CancelEdit);
@@ -211,33 +207,40 @@ namespace LanguageLearningApp.ViewModels.Admin
             ManageQuestionsCommand = new Command<LessonModel>(async (lesson) => await ManageQuestionsAsync(lesson));
             MoveUpCommand = new Command<LessonModel>(async (lesson) => await MoveUpAsync(lesson));
             MoveDownCommand = new Command<LessonModel>(async (lesson) => await MoveDownAsync(lesson));
-            BackToCoursesCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
+            BackToCoursesCommand = new Command(async () => await NavigateBackToCoursesAsync());
         }
 
-        private async Task LoadCourseAndLessonsAsync()
+        // Tải khóa học và danh sách bài học
+        public async Task LoadCourseAndLessonsAsync()
         {
+            if (string.IsNullOrEmpty(CourseId))
+            {
+                ErrorMessage = "Thiếu ID khóa học.";
+                return;
+            }
+
             IsLoading = true;
             ErrorMessage = string.Empty;
 
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
 
-                // Load course details
                 CurrentCourse = await _courseService.GetCourseByIdAsync(CourseId, idToken);
+                if (CurrentCourse == null)
+                {
+                    ErrorMessage = "Không tìm thấy khóa học.";
+                    return;
+                }
 
-                if (CurrentCourse != null)
-                {
-                    await LoadLessonsAsync();
-                }
-                else
-                {
-                    ErrorMessage = "Course not found";
-                }
+                await LoadLessonsForCourseAsync();
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error loading course: {ex.Message}";
+                ErrorMessage = $"Lỗi khi tải khóa học: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
             }
             finally
             {
@@ -245,26 +248,48 @@ namespace LanguageLearningApp.ViewModels.Admin
             }
         }
 
-        private async Task LoadLessonsAsync()
+        // Tải danh sách bài học cho khóa học
+        private async Task LoadLessonsForCourseAsync()
         {
+            if (string.IsNullOrEmpty(CourseId))
+            {
+                ErrorMessage = "Thiếu ID khóa học.";
+                return;
+            }
+
             IsRefreshing = true;
             ErrorMessage = string.Empty;
 
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
-                var courseLessons = await _lessonService.GetLessonsByCourseIdAsync(CourseId, idToken);
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
 
-                // Sort lessons by order
+                // Lấy danh sách bài học theo CourseId
+                var courseLessons = await _lessonService.GetLessonsByCourseIdAsync(CourseId, idToken);
+                if (courseLessons == null || courseLessons.Count == 0)
+                {
+                    ErrorMessage = "Không tìm thấy bài học nào cho khóa học này.";
+                    Lessons.Clear();
+                    return;
+                }
+
+                // Ghi log số lượng bài học đã tải
+                Console.WriteLine($"Đã tải {courseLessons.Count} bài học cho CourseId: {CourseId}");
+
+                // Sắp xếp bài học theo thứ tự (Order)
                 courseLessons.Sort((a, b) => a.Order.CompareTo(b.Order));
 
+                // Cập nhật danh sách bài học
                 Lessons.Clear();
                 foreach (var lesson in courseLessons)
                 {
                     Lessons.Add(lesson);
+                    Console.WriteLine($"Đã thêm bài học vào giao diện: {lesson.Title} (Thứ tự: {lesson.Order})");
                 }
 
-                // Update lesson count in course
+                // Cập nhật số lượng bài học trong khóa học
                 if (CurrentCourse != null && CurrentCourse.TotalLessons != courseLessons.Count)
                 {
                     CurrentCourse.TotalLessons = courseLessons.Count;
@@ -273,7 +298,8 @@ namespace LanguageLearningApp.ViewModels.Admin
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error loading lessons: {ex.Message}";
+                ErrorMessage = $"Lỗi khi tải bài học cho khóa học ID {CourseId}: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
             }
             finally
             {
@@ -281,16 +307,16 @@ namespace LanguageLearningApp.ViewModels.Admin
             }
         }
 
+        // Tạo bài học mới
         private void CreateNewLesson()
         {
-            // Clear form fields
             LessonId = string.Empty;
             Title = string.Empty;
             Description = string.Empty;
             Content = string.Empty;
             ImageUrl = string.Empty;
             VideoUrl = string.Empty;
-            Order = Lessons.Count + 1; // Set order to next in sequence
+            Order = Lessons.Count + 1;
             RequiredPoints = 0;
             MaxPoints = 100;
             EstimatedMinutes = 10;
@@ -301,29 +327,54 @@ namespace LanguageLearningApp.ViewModels.Admin
             ErrorMessage = string.Empty;
         }
 
+        // Lưu bài học
         private async Task SaveLessonAsync()
         {
             if (string.IsNullOrWhiteSpace(Title))
             {
-                ErrorMessage = "Title is required";
+                ErrorMessage = "Tiêu đề là bắt buộc.";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(Description))
             {
-                ErrorMessage = "Description is required";
+                ErrorMessage = "Mô tả là bắt buộc.";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(Content))
             {
-                ErrorMessage = "Content is required";
+                ErrorMessage = "Nội dung là bắt buộc.";
                 return;
             }
 
             if (Order <= 0)
             {
-                ErrorMessage = "Order must be greater than 0";
+                ErrorMessage = "Thứ tự phải lớn hơn 0.";
+                return;
+            }
+
+            if (RequiredPoints < 0)
+            {
+                ErrorMessage = "Điểm yêu cầu không được âm.";
+                return;
+            }
+
+            if (MaxPoints <= 0)
+            {
+                ErrorMessage = "Điểm tối đa phải lớn hơn 0.";
+                return;
+            }
+
+            if (EstimatedMinutes <= 0)
+            {
+                ErrorMessage = "Thời gian ước tính phải lớn hơn 0.";
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(VideoUrl) && !IsValidUrl(VideoUrl))
+            {
+                ErrorMessage = "URL video không hợp lệ. Vui lòng nhập URL YouTube hoặc Vimeo hợp lệ.";
                 return;
             }
 
@@ -333,10 +384,11 @@ namespace LanguageLearningApp.ViewModels.Admin
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
 
                 if (IsNewLesson)
                 {
-                    // Create new lesson
                     var newLesson = new LessonModel
                     {
                         CourseId = CourseId,
@@ -352,30 +404,36 @@ namespace LanguageLearningApp.ViewModels.Admin
                     };
 
                     var lessonId = await _lessonService.CreateLessonAsync(newLesson, idToken);
-
                     if (!string.IsNullOrEmpty(lessonId))
                     {
                         newLesson.LessonId = lessonId;
+                        Console.WriteLine($"Đã tạo bài học mới với ID: {lessonId}, Tiêu đề: {newLesson.Title}");
 
-                        // Update course total lessons
+                        // Thêm bài học mới vào danh sách ngay lập tức
+                        Lessons.Add(newLesson);
+                        Console.WriteLine($"Đã thêm bài học mới vào giao diện: {newLesson.Title} (Thứ tự: {newLesson.Order})");
+
+                        // Cập nhật số lượng bài học trong khóa học
                         if (CurrentCourse != null)
                         {
                             CurrentCourse.TotalLessons++;
                             await _courseService.UpdateCourseAsync(CurrentCourse, idToken);
+                            Console.WriteLine($"Đã cập nhật TotalLessons cho CourseId {CourseId}: {CurrentCourse.TotalLessons}");
                         }
 
-                        // Reset form and refresh lessons
                         CancelEdit();
-                        await LoadLessonsAsync();
+
+                        // Làm mới danh sách để đảm bảo đồng bộ với backend
+                        await LoadLessonsForCourseAsync();
                     }
                     else
                     {
-                        ErrorMessage = "Failed to create lesson";
+                        ErrorMessage = "Không thể tạo bài học.";
+                        await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
                     }
                 }
                 else
                 {
-                    // Update existing lesson
                     if (_selectedLesson != null)
                     {
                         _selectedLesson.Title = Title;
@@ -389,23 +447,24 @@ namespace LanguageLearningApp.ViewModels.Admin
                         _selectedLesson.EstimatedMinutes = EstimatedMinutes;
 
                         var success = await _lessonService.UpdateLessonAsync(_selectedLesson, idToken);
-
                         if (success)
                         {
-                            // Reset form and refresh lessons
+                            Console.WriteLine($"Đã cập nhật bài học: {_selectedLesson.Title}");
                             CancelEdit();
-                            await LoadLessonsAsync();
+                            await LoadLessonsForCourseAsync();
                         }
                         else
                         {
-                            ErrorMessage = "Failed to update lesson";
+                            ErrorMessage = "Không thể cập nhật bài học.";
+                            await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error saving lesson: {ex.Message}";
+                ErrorMessage = $"Lỗi khi lưu bài học: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
             }
             finally
             {
@@ -413,13 +472,13 @@ namespace LanguageLearningApp.ViewModels.Admin
             }
         }
 
+        // Hủy chỉnh sửa
         private void CancelEdit()
         {
             IsEditing = false;
             IsNewLesson = false;
             SelectedLesson = null;
 
-            // Clear form fields
             LessonId = string.Empty;
             Title = string.Empty;
             Description = string.Empty;
@@ -434,15 +493,16 @@ namespace LanguageLearningApp.ViewModels.Admin
             ErrorMessage = string.Empty;
         }
 
+        // Xóa bài học
         private async Task DeleteLessonAsync(LessonModel lesson)
         {
             if (lesson == null)
                 return;
 
             var confirm = await App.Current.MainPage.DisplayAlert(
-                "Confirm Delete",
-                $"Are you sure you want to delete the lesson '{lesson.Title}'? This will also delete all associated questions.",
-                "Yes", "No");
+                "Xác nhận xóa",
+                $"Bạn có chắc chắn muốn xóa bài học '{lesson.Title}'? Thao tác này cũng sẽ xóa tất cả câu hỏi liên quan.",
+                "Có", "Không");
 
             if (!confirm)
                 return;
@@ -452,23 +512,24 @@ namespace LanguageLearningApp.ViewModels.Admin
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
-                var success = await _lessonService.DeleteLessonAsync(lesson.LessonId, idToken);
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
 
+                if (!string.IsNullOrEmpty(lesson.ImageUrl))
+                {
+                    await _storageService.DeleteImageAsync(lesson.ImageUrl, idToken);
+                }
+
+                var success = await _lessonService.DeleteLessonAsync(lesson.LessonId, idToken);
                 if (success)
                 {
                     Lessons.Remove(lesson);
-
-                    // Update course total lessons
                     if (CurrentCourse != null)
                     {
                         CurrentCourse.TotalLessons--;
                         await _courseService.UpdateCourseAsync(CurrentCourse, idToken);
                     }
-
-                    // Reorder remaining lessons
                     await ReorderLessonsAsync();
-
-                    // If the deleted lesson was being edited, clear the form
                     if (SelectedLesson == lesson)
                     {
                         CancelEdit();
@@ -476,12 +537,12 @@ namespace LanguageLearningApp.ViewModels.Admin
                 }
                 else
                 {
-                    await App.Current.MainPage.DisplayAlert("Error", "Failed to delete lesson", "OK");
+                    await App.Current.MainPage.DisplayAlert("Lỗi", "Không thể xóa bài học.", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error deleting lesson: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi xóa bài học: {ex.Message}", "OK");
             }
             finally
             {
@@ -489,118 +550,218 @@ namespace LanguageLearningApp.ViewModels.Admin
             }
         }
 
+        // Chọn hình ảnh
         private async Task PickImageAsync()
         {
             try
             {
-                // Use MAUI file picker
+                if (!await CheckNetworkConnectionAsync())
+                {
+                    await App.Current.MainPage.DisplayAlert("Lỗi", "Không có kết nối internet. Vui lòng kiểm tra mạng và thử lại.", "OK");
+                    return;
+                }
+
                 var result = await FilePicker.PickAsync(new PickOptions
                 {
                     FileTypes = FilePickerFileType.Images,
-                    PickerTitle = "Select Lesson Image"
+                    PickerTitle = "Chọn hình ảnh bài học"
                 });
 
                 if (result != null)
                 {
                     IsLoading = true;
-
                     var idToken = LocalStorageHelper.GetItem("idToken");
-                    var imageUrl = await _storageService.UploadImageFromPickerAsync(result, "lesson_images", idToken);
+                    if (string.IsNullOrEmpty(idToken))
+                    {
+                        await App.Current.MainPage.DisplayAlert("Lỗi", "Người dùng chưa được xác thực. Vui lòng đăng nhập lại.", "OK");
+                        return;
+                    }
 
+                    var imageUrl = await _storageService.UploadImageFromPickerAsync(result, "lesson_images", idToken);
                     if (!string.IsNullOrEmpty(imageUrl))
                     {
                         ImageUrl = imageUrl;
                     }
                     else
                     {
-                        await App.Current.MainPage.DisplayAlert("Error", "Failed to upload image", "OK");
+                        await App.Current.MainPage.DisplayAlert("Lỗi", "Không thể tải lên hình ảnh. Vui lòng thử lại.", "OK");
                     }
-
-                    IsLoading = false;
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                var message = ex.Message.Contains("403") ? "Truy cập bị từ chối: Vui lòng kiểm tra quy tắc Firebase Storage hoặc mã xác thực của bạn."
+                    : ex.Message.Contains("401") ? "Xác thực thất bại: Vui lòng đăng nhập lại."
+                    : $"Lỗi khi tải lên hình ảnh: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", message, "OK");
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error picking image: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi chọn hình ảnh: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
+        // Quản lý câu hỏi
         private async Task ManageQuestionsAsync(LessonModel lesson)
         {
             if (lesson == null)
+            {
+                await App.Current.MainPage.DisplayAlert("Lỗi", "Không có bài học được chọn.", "OK");
                 return;
+            }
 
-            // Navigate to questions management for this lesson
-            await Shell.Current.GoToAsync($"questionManagement?lessonId={lesson.LessonId}&courseId={CourseId}");
+            try
+            {
+                await Shell.Current.GoToAsync($"questionManagement?lessonId={lesson.LessonId}&courseId={CourseId}");
+            }
+            catch (Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể điều hướng đến quản lý câu hỏi: {ex.Message}", "OK");
+            }
         }
 
+        // Di chuyển bài học lên
         private async Task MoveUpAsync(LessonModel lesson)
         {
             if (lesson == null)
                 return;
 
             var index = Lessons.IndexOf(lesson);
-
-            // Can't move up if already first
             if (index <= 0)
                 return;
 
-            // Swap with previous lesson
-            var previousLesson = Lessons[index - 1];
+            IsLoading = true;
+            try
+            {
+                var idToken = LocalStorageHelper.GetItem("idToken");
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
 
-            // Swap order values
-            int tempOrder = lesson.Order;
-            lesson.Order = previousLesson.Order;
-            previousLesson.Order = tempOrder;
+                var previousLesson = Lessons[index - 1];
+                int tempOrder = lesson.Order;
+                lesson.Order = previousLesson.Order;
+                previousLesson.Order = tempOrder;
 
-            // Update lessons in database
-            var idToken = LocalStorageHelper.GetItem("idToken");
-            await _lessonService.UpdateLessonAsync(lesson, idToken);
-            await _lessonService.UpdateLessonAsync(previousLesson, idToken);
+                Lessons.Move(index, index - 1);
 
-            // Reload lessons to refresh order
-            await LoadLessonsAsync();
+                await Task.WhenAll(
+                    _lessonService.UpdateLessonAsync(lesson, idToken),
+                    _lessonService.UpdateLessonAsync(previousLesson, idToken)
+                );
+            }
+            catch (Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi di chuyển bài học lên: {ex.Message}", "OK");
+                await LoadLessonsForCourseAsync();
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
+        // Di chuyển bài học xuống
         private async Task MoveDownAsync(LessonModel lesson)
         {
             if (lesson == null)
                 return;
 
             var index = Lessons.IndexOf(lesson);
-
-            // Can't move down if already last
             if (index >= Lessons.Count - 1)
                 return;
 
-            // Swap with next lesson
-            var nextLesson = Lessons[index + 1];
+            IsLoading = true;
+            try
+            {
+                var idToken = LocalStorageHelper.GetItem("idToken");
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
 
-            // Swap order values
-            int tempOrder = lesson.Order;
-            lesson.Order = nextLesson.Order;
-            nextLesson.Order = tempOrder;
+                var nextLesson = Lessons[index + 1];
+                int tempOrder = lesson.Order;
+                lesson.Order = nextLesson.Order;
+                nextLesson.Order = tempOrder;
 
-            // Update lessons in database
-            var idToken = LocalStorageHelper.GetItem("idToken");
-            await _lessonService.UpdateLessonAsync(lesson, idToken);
-            await _lessonService.UpdateLessonAsync(nextLesson, idToken);
+                Lessons.Move(index, index + 1);
 
-            // Reload lessons to refresh order
-            await LoadLessonsAsync();
+                await Task.WhenAll(
+                    _lessonService.UpdateLessonAsync(lesson, idToken),
+                    _lessonService.UpdateLessonAsync(nextLesson, idToken)
+                );
+            }
+            catch (Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi di chuyển bài học xuống: {ex.Message}", "OK");
+                await LoadLessonsForCourseAsync();
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
+        // Sắp xếp lại thứ tự bài học
         private async Task ReorderLessonsAsync()
         {
-            // Reorder remaining lessons
-            var idToken = LocalStorageHelper.GetItem("idToken");
-
-            for (int i = 0; i < Lessons.Count; i++)
+            try
             {
-                var lesson = Lessons[i];
-                lesson.Order = i + 1;
-                await _lessonService.UpdateLessonAsync(lesson, idToken);
+                var idToken = LocalStorageHelper.GetItem("idToken");
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
+
+                var updateTasks = new List<Task>();
+                for (int i = 0; i < Lessons.Count; i++)
+                {
+                    var lesson = Lessons[i];
+                    if (lesson.Order != i + 1)
+                    {
+                        lesson.Order = i + 1;
+                        updateTasks.Add(_lessonService.UpdateLessonAsync(lesson, idToken));
+                    }
+                }
+                await Task.WhenAll(updateTasks);
             }
+            catch (Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi sắp xếp lại bài học: {ex.Message}", "OK");
+            }
+        }
+
+        // Quay lại danh sách khóa học
+        private async Task NavigateBackToCoursesAsync()
+        {
+            try
+            {
+                await Shell.Current.GoToAsync("..");
+            }
+            catch (Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể quay lại: {ex.Message}", "OK");
+            }
+        }
+
+        // Kiểm tra URL hợp lệ
+        private bool IsValidUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return true;
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uriResult))
+                return false;
+
+            var host = uriResult.Host.ToLower();
+            return host.Contains("youtube.com") || host.Contains("video.com");
+        }
+
+        // Kiểm tra kết nối mạng
+        private async Task<bool> CheckNetworkConnectionAsync()
+        {
+            var current = Connectivity.NetworkAccess;
+            return current == NetworkAccess.Internet;
         }
     }
 }

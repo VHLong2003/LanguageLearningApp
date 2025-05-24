@@ -22,7 +22,7 @@ namespace LanguageLearningApp.ViewModels.Admin
         private bool _isBusy;
         private string _errorMessage;
 
-        // Form fields
+        // Các trường biểu mẫu
         private string _title;
         private string _description;
         private CourseType _type;
@@ -44,7 +44,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             {
                 if (SetProperty(ref _selectedCourse, value) && value != null)
                 {
-                    // Update form fields
                     Title = value.Title;
                     Description = value.Description;
                     Type = value.Type;
@@ -89,7 +88,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             set => SetProperty(ref _errorMessage, value);
         }
 
-        // Form properties
         public string Title
         {
             get => _title;
@@ -132,10 +130,8 @@ namespace LanguageLearningApp.ViewModels.Admin
             set => SetProperty(ref _isPublished, value);
         }
 
-        // Course type options for dropdown
         public Array CourseTypes => Enum.GetValues(typeof(CourseType));
 
-        // Commands
         public ICommand LoadCoursesCommand { get; }
         public ICommand NewCourseCommand { get; }
         public ICommand SaveCourseCommand { get; }
@@ -157,11 +153,7 @@ namespace LanguageLearningApp.ViewModels.Admin
             DeleteCourseCommand = new Command<CourseModel>(async (course) => await DeleteCourseAsync(course));
             CancelEditCommand = new Command(CancelEdit);
             PickImageCommand = new Command(async () => await PickImageAsync());
-            ManageLessonsCommand = new Command<CourseModel>(async (course) => await ManageLessonsAsync(course));
-
-            // Default values for new course
-            DifficultyLevel = 1;
-            RequiredPoints = 0;
+            ManageLessonsCommand = new Command<CourseModel>(async (course) => await NavigateToLessonsAsync(course));
         }
 
         public async Task InitializeAsync()
@@ -172,12 +164,13 @@ namespace LanguageLearningApp.ViewModels.Admin
         private async Task LoadCoursesAsync()
         {
             IsRefreshing = true;
-
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
-                var allCourses = await _courseService.GetAllCoursesAsync(idToken);
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực.");
 
+                var allCourses = await _courseService.GetAllCoursesAsync(idToken);
                 Courses.Clear();
                 foreach (var course in allCourses)
                 {
@@ -186,7 +179,7 @@ namespace LanguageLearningApp.ViewModels.Admin
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error loading courses: {ex.Message}";
+                ErrorMessage = $"Lỗi khi tải khóa học: {ex.Message}";
             }
             finally
             {
@@ -196,7 +189,6 @@ namespace LanguageLearningApp.ViewModels.Admin
 
         private void CreateNewCourse()
         {
-            // Clear form fields
             Title = string.Empty;
             Description = string.Empty;
             Type = CourseType.Language;
@@ -215,13 +207,25 @@ namespace LanguageLearningApp.ViewModels.Admin
         {
             if (string.IsNullOrWhiteSpace(Title))
             {
-                ErrorMessage = "Title is required";
+                ErrorMessage = "Tiêu đề là bắt buộc.";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(Description))
             {
-                ErrorMessage = "Description is required";
+                ErrorMessage = "Mô tả là bắt buộc.";
+                return;
+            }
+
+            if (DifficultyLevel < 1 || DifficultyLevel > 10)
+            {
+                ErrorMessage = "Mức độ khó phải nằm trong khoảng từ 1 đến 10.";
+                return;
+            }
+
+            if (RequiredPoints < 0)
+            {
+                ErrorMessage = "Điểm yêu cầu không được âm.";
                 return;
             }
 
@@ -235,7 +239,6 @@ namespace LanguageLearningApp.ViewModels.Admin
 
                 if (IsNewCourse)
                 {
-                    // Create new course
                     var newCourse = new CourseModel
                     {
                         Title = Title,
@@ -251,23 +254,19 @@ namespace LanguageLearningApp.ViewModels.Admin
                     };
 
                     var courseId = await _courseService.CreateCourseAsync(newCourse, idToken);
-
                     if (courseId != null)
                     {
                         newCourse.CourseId = courseId;
                         Courses.Add(newCourse);
-
-                        // Reset form
                         CancelEdit();
                     }
                     else
                     {
-                        ErrorMessage = "Failed to create course";
+                        ErrorMessage = "Không thể tạo khóa học.";
                     }
                 }
                 else
                 {
-                    // Update existing course
                     if (SelectedCourse != null)
                     {
                         SelectedCourse.Title = Title;
@@ -279,25 +278,22 @@ namespace LanguageLearningApp.ViewModels.Admin
                         SelectedCourse.IsPublished = IsPublished;
 
                         var success = await _courseService.UpdateCourseAsync(SelectedCourse, idToken);
-
                         if (success)
                         {
-                            // Reset form
                             CancelEdit();
                         }
                         else
                         {
-                            ErrorMessage = "Failed to update course";
+                            ErrorMessage = "Không thể cập nhật khóa học.";
                         }
                     }
                 }
 
-                // Refresh the list
                 await LoadCoursesAsync();
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error saving course: {ex.Message}";
+                ErrorMessage = $"Lỗi khi lưu khóa học: {ex.Message}";
             }
             finally
             {
@@ -310,24 +306,25 @@ namespace LanguageLearningApp.ViewModels.Admin
             if (course == null) return;
 
             var confirm = await App.Current.MainPage.DisplayAlert(
-                "Confirm Delete",
-                $"Are you sure you want to delete '{course.Title}'? This will also delete all associated lessons and questions.",
-                "Yes", "No");
+                "Xác nhận xóa",
+                $"Bạn có chắc chắn muốn xóa '{course.Title}'? Thao tác này cũng sẽ xóa tất cả bài học và câu hỏi liên quan.",
+                "Có", "Không");
 
             if (!confirm) return;
 
             IsBusy = true;
-
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
-                var success = await _courseService.DeleteCourseAsync(course.CourseId, idToken);
+                if (!string.IsNullOrEmpty(course.ImageUrl))
+                {
+                    await _storageService.DeleteImageAsync(course.ImageUrl, idToken);
+                }
 
+                var success = await _courseService.DeleteCourseAsync(course.CourseId, idToken);
                 if (success)
                 {
                     Courses.Remove(course);
-
-                    // If the deleted course was being edited, clear the form
                     if (SelectedCourse == course)
                     {
                         CancelEdit();
@@ -335,12 +332,12 @@ namespace LanguageLearningApp.ViewModels.Admin
                 }
                 else
                 {
-                    await App.Current.MainPage.DisplayAlert("Error", "Failed to delete course", "OK");
+                    await App.Current.MainPage.DisplayAlert("Lỗi", "Không thể xóa khóa học.", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error deleting course: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi xóa khóa học: {ex.Message}", "OK");
             }
             finally
             {
@@ -355,7 +352,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             SelectedCourse = null;
             ErrorMessage = string.Empty;
 
-            // Clear form fields
             Title = string.Empty;
             Description = string.Empty;
             Type = CourseType.Language;
@@ -369,44 +365,78 @@ namespace LanguageLearningApp.ViewModels.Admin
         {
             try
             {
-                // Use the MAUI file picker
+                if (!await CheckNetworkConnectionAsync())
+                {
+                    await App.Current.MainPage.DisplayAlert("Lỗi", "Không có kết nối internet. Vui lòng kiểm tra mạng và thử lại.", "OK");
+                    return;
+                }
+
                 var result = await FilePicker.PickAsync(new PickOptions
                 {
                     FileTypes = FilePickerFileType.Images,
-                    PickerTitle = "Select Course Image"
+                    PickerTitle = "Chọn hình ảnh khóa học"
                 });
 
                 if (result != null)
                 {
-                    // Upload the image
                     IsBusy = true;
                     var idToken = LocalStorageHelper.GetItem("idToken");
-                    var imageUrl = await _storageService.UploadImageFromPickerAsync(result, "course_images", idToken);
+                    if (string.IsNullOrEmpty(idToken))
+                    {
+                        await App.Current.MainPage.DisplayAlert("Lỗi", "Người dùng chưa được xác thực. Vui lòng đăng nhập lại.", "OK");
+                        return;
+                    }
 
+                    var imageUrl = await _storageService.UploadImageFromPickerAsync(result, "course_images", idToken);
                     if (imageUrl != null)
                     {
                         ImageUrl = imageUrl;
                     }
                     else
                     {
-                        await App.Current.MainPage.DisplayAlert("Error", "Failed to upload image", "OK");
+                        await App.Current.MainPage.DisplayAlert("Lỗi", "Không thể tải lên hình ảnh. Vui lòng thử lại.", "OK");
                     }
-
-                    IsBusy = false;
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                var message = ex.Message.Contains("403") ? "Truy cập bị từ chối: Vui lòng kiểm tra quy tắc Firebase Storage hoặc mã xác thực của bạn."
+                    : ex.Message.Contains("401") ? "Xác thực thất bại: Vui lòng đăng nhập lại."
+                    : $"Lỗi khi tải lên hình ảnh: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", message, "OK");
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error picking image: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi chọn hình ảnh: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
-        private async Task ManageLessonsAsync(CourseModel course)
+        private async Task NavigateToLessonsAsync(CourseModel course)
         {
-            if (course == null) return;
+            if (course == null)
+            {
+                await App.Current.MainPage.DisplayAlert("Lỗi", "Không có khóa học được chọn.", "OK");
+                return;
+            }
 
-            // Navigate to the lessons management page for this course
-            await Shell.Current.GoToAsync($"lessons?courseId={course.CourseId}");
+            try
+            {
+                await Shell.Current.GoToAsync($"lessonManagement?courseId={course.CourseId}");
+            }
+            catch (Exception ex)
+            {
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể điều hướng đến quản lý bài học: {ex.Message}", "OK");
+            }
+        }
+
+        private async Task<bool> CheckNetworkConnectionAsync()
+        {
+            var current = Connectivity.NetworkAccess;
+            return current == NetworkAccess.Internet;
         }
     }
 }

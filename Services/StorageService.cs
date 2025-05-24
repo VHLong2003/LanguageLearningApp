@@ -3,9 +3,9 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using LanguageLearningApp.Helpers;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Graphics;
+using LanguageLearningApp.Helpers;
 
 namespace LanguageLearningApp.Services
 {
@@ -13,51 +13,60 @@ namespace LanguageLearningApp.Services
     {
         private readonly HttpClient _httpClient;
         private readonly FirebaseConfig _firebaseConfig;
+        private const long MaxFileSize = 5 * 1024 * 1024; // 5MB limit
+        private readonly string[] AllowedFileTypes = { ".jpg", ".jpeg", ".png", ".gif" };
 
         public StorageService(FirebaseConfig firebaseConfig)
         {
             _httpClient = new HttpClient();
             _firebaseConfig = firebaseConfig;
+            _httpClient.DefaultRequestHeaders.Authorization = null; // Avoid stale headers
         }
 
         public async Task<string> UploadImageAsync(Stream imageStream, string fileName, string folder, string idToken)
         {
             try
             {
-                // Firebase Storage upload endpoint
-                // Note: This is a simplified example - actual Firebase Storage requires specific authentication and endpoints
-                // You would typically need to generate a signed URL or use Firebase Admin SDK
+                if (imageStream == null || string.IsNullOrEmpty(fileName))
+                    throw new ArgumentException("Image stream or filename cannot be null or empty.");
 
-                // For this example, we'll use the Storage REST API
-                var storageUrl = $"https://firebasestorage.googleapis.com/v0/b/{_firebaseConfig.StorageBucket}/o/{folder}%2F{fileName}";
+                var extension = Path.GetExtension(fileName).ToLowerInvariant();
+                if (!AllowedFileTypes.Contains(extension))
+                    throw new InvalidOperationException("Invalid file type. Only JPG, JPEG, PNG, and GIF are allowed.");
 
-                // Read the image stream into a byte array
-                var memoryStream = new MemoryStream();
+                if (imageStream.Length > MaxFileSize)
+                    throw new InvalidOperationException("File size exceeds 5MB limit.");
+
+                var objectPath = $"{folder}/{fileName}";
+                var uploadUrl = $"https://firebasestorage.googleapis.com/v0/b/{_firebaseConfig.StorageBucket}/o?uploadType=media&name={Uri.EscapeDataString(objectPath)}";
+
+                using var memoryStream = new MemoryStream();
                 await imageStream.CopyToAsync(memoryStream);
                 var bytes = memoryStream.ToArray();
 
-                // Prepare the multipart form data
                 var content = new ByteArrayContent(bytes);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-                // Upload the image
-                var response = await _httpClient.PostAsync(storageUrl, content);
+                var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", idToken);
+                request.Content = content;
+
+                var response = await _httpClient.SendAsync(request);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Get the download URL
-                    var responseJson = await response.Content.ReadAsStringAsync();
-
-                    // In real Firebase Storage, you would parse the response to get the download URL
-                    // Here's a simplified example:
-                    return $"https://firebasestorage.googleapis.com/v0/b/{_firebaseConfig.StorageBucket}/o/{folder}%2F{fileName}?alt=media";
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return $"https://firebasestorage.googleapis.com/v0/b/{_firebaseConfig.StorageBucket}/o/{Uri.EscapeDataString(objectPath)}?alt=media";
                 }
 
-                return null;
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Upload failed: Status {response.StatusCode}, Details: {errorContent}");
+                throw new HttpRequestException($"Upload failed: {response.StatusCode} - {errorContent}");
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                Console.WriteLine($"Error uploading image: {ex.Message} - StackTrace: {ex.StackTrace}");
+                throw;
             }
         }
 
@@ -65,18 +74,17 @@ namespace LanguageLearningApp.Services
         {
             try
             {
-                // Open the file as a stream
+                if (!File.Exists(filePath))
+                    throw new FileNotFoundException("File not found.", filePath);
+
                 using var fileStream = File.OpenRead(filePath);
-
-                // Get file name from path
                 var fileName = Path.GetFileName(filePath);
-
-                // Upload using the existing method
                 return await UploadImageAsync(fileStream, fileName, folder, idToken);
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                Console.WriteLine($"Error uploading from file: {ex.Message}");
+                throw;
             }
         }
 
@@ -85,20 +93,22 @@ namespace LanguageLearningApp.Services
             try
             {
                 if (fileResult == null)
-                    return null;
+                    throw new ArgumentNullException(nameof(fileResult), "No file selected.");
 
-                // Open the picked file
+                var extension = Path.GetExtension(fileResult.FileName).ToLowerInvariant();
+                if (!AllowedFileTypes.Contains(extension))
+                    throw new InvalidOperationException("Invalid file type. Only JPG, JPEG, PNG, and GIF are allowed.");
+
+                Console.WriteLine($"Selected file: {fileResult.FileName}, Size: {fileResult.OpenReadAsync().Result.Length} bytes");
+
                 using var stream = await fileResult.OpenReadAsync();
-
-                // Generate unique filename
-                var fileName = $"{Guid.NewGuid():N}{Path.GetExtension(fileResult.FileName)}";
-
-                // Upload
+                var fileName = $"{Guid.NewGuid():N}{extension}";
                 return await UploadImageAsync(stream, fileName, folder, idToken);
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                Console.WriteLine($"Error uploading from picker: {ex.Message} - StackTrace: {ex.StackTrace}");
+                throw;
             }
         }
 
@@ -106,23 +116,30 @@ namespace LanguageLearningApp.Services
         {
             try
             {
-                // Extract object path from URL
-                // Example URL: https://firebasestorage.googleapis.com/v0/b/bucket/o/folder%2Fimage.jpg?alt=media
+                if (string.IsNullOrEmpty(imageUrl))
+                    throw new ArgumentNullException(nameof(imageUrl), "Image URL cannot be null or empty.");
+
                 var uri = new Uri(imageUrl);
                 var pathSegments = uri.AbsolutePath.Split('/');
-                var objectPath = Uri.UnescapeDataString(pathSegments[pathSegments.Length - 1]);
+                var objectPath = Uri.UnescapeDataString(pathSegments[pathSegments.Length - 1].Split('?')[0]);
 
                 var deleteUrl = $"https://firebasestorage.googleapis.com/v0/b/{_firebaseConfig.StorageBucket}/o/{objectPath}";
-
                 var request = new HttpRequestMessage(HttpMethod.Delete, deleteUrl);
-                request.Headers.Add("Authorization", $"Bearer {idToken}");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", idToken);
 
                 var response = await _httpClient.SendAsync(request);
 
-                return response.IsSuccessStatusCode;
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Failed to delete image: {response.StatusCode} - {errorContent}");
+                }
+
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error deleting image: {ex.Message}");
                 return false;
             }
         }
@@ -131,24 +148,16 @@ namespace LanguageLearningApp.Services
         {
             try
             {
-                // If the URL is null or empty, return null
                 if (string.IsNullOrEmpty(imageUrl))
                     return null;
 
-                // Check if it's a remote URL or a local resource
-                if (imageUrl.StartsWith("http"))
-                {
-                    // It's a remote URL
-                    return ImageSource.FromUri(new Uri(imageUrl));
-                }
-                else
-                {
-                    // It's a local resource
-                    return ImageSource.FromFile(imageUrl);
-                }
+                return imageUrl.StartsWith("http")
+                    ? ImageSource.FromUri(new Uri(imageUrl))
+                    : ImageSource.FromFile(imageUrl);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error getting image source: {ex.Message}");
                 return null;
             }
         }

@@ -3,15 +3,16 @@ using Newtonsoft.Json;
 
 namespace LanguageLearningApp.Models
 {
+    // Enum định nghĩa các loại câu hỏi
     public enum QuestionType
     {
-        MultipleChoice,
-        TrueFalse,
-        FillInTheBlank,
-        Matching,
-        ShortAnswer,
-        VoiceRecording,
-        Arrangement
+        MultipleChoice,    // Trắc nghiệm
+        TrueFalse,         // Đúng/Sai
+        FillInTheBlank,    // Điền vào chỗ trống
+        Matching,          // Ghép đôi
+        ShortAnswer,       // Trả lời ngắn
+        VoiceRecording,    // Ghi âm
+        Arrangement        // Sắp xếp
     }
 
     public class QuestionModel
@@ -50,6 +51,6 @@ namespace LanguageLearningApp.Models
         public int Order { get; set; }
 
         [JsonProperty("timeLimit")]
-        public int TimeLimit { get; set; } // In seconds
+        public int TimeLimit { get; set; } // Đơn vị: giây
     }
 }

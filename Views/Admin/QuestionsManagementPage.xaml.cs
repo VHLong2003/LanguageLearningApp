@@ -1,44 +1,30 @@
-using LanguageLearningApp.Models;
+﻿using LanguageLearningApp.Services;
 using LanguageLearningApp.ViewModels.Admin;
+using Microsoft.Maui.Controls;
 
 namespace LanguageLearningApp.Views.Admin
 {
     public partial class QuestionsManagementPage : ContentPage
     {
-        private AdminQuestionViewModel _viewModel;
-
-        public QuestionsManagementPage(AdminQuestionViewModel viewModel)
+        public QuestionsManagementPage()
         {
             InitializeComponent();
-            _viewModel = viewModel;
-            BindingContext = _viewModel;
+            BindingContext = new AdminQuestionViewModel(
+                App.Services.GetService<QuestionService>(),
+                App.Services.GetService<LessonService>(),
+                App.Services.GetService<StorageService>()
+            );
         }
 
-        private void OnQuestionSelected(object sender, SelectionChangedEventArgs e)
+        protected override async void OnAppearing()
         {
-            if (e.CurrentSelection.Count > 0)
+            base.OnAppearing();
+            if (BindingContext is AdminQuestionViewModel vm)
             {
-                // The ViewModel will handle setting up the editing form
-                _viewModel.SelectedQuestion = (QuestionModel)e.CurrentSelection[0];
-
-                // Reset selection
-                ((CollectionView)sender).SelectedItem = null;
+                // Nếu LessonId đã truyền qua Route, sẽ tự động load dữ liệu
+                if (!string.IsNullOrEmpty(vm.LessonId))
+                    await vm.LoadLessonAndQuestionsAsync();
             }
         }
-
-        private void OnCorrectAnswerSelected(object sender, CheckedChangedEventArgs e)
-        {
-            if (sender is RadioButton radioButton && radioButton.IsChecked)
-            {
-                // Get the data context of the parent Grid
-                if (radioButton.Parent is Grid grid && grid.BindingContext != null)
-                {
-                    // Set the correct answer in the view model
-                    var viewModel = this.BindingContext as AdminQuestionViewModel;
-                    viewModel.CorrectAnswer = grid.BindingContext.ToString();
-                }
-            }
-        }
-
     }
 }

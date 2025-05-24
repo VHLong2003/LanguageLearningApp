@@ -3,8 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.Admin"
              xmlns:models="clr-namespace:LanguageLearningApp.Models"
+             xmlns:local="clr-namespace:LanguageLearningApp.Converters"
              x:Class="LanguageLearningApp.Views.Admin.ShopManagementPage"
              Title="Quản lý cửa hàng">
+
+
 
     <Grid RowDefinitions="Auto,*,Auto">
 
@@ -12,8 +15,8 @@
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="15">
             <StackLayout Grid.Column="0">
                 <Label Text="Quản lý cửa hàng"
-                      FontSize="18"
-                      FontAttributes="Bold" />
+                       FontSize="18"
+                       FontAttributes="Bold" />
                 <Label Text="{Binding ShopItems.Count, StringFormat='Tổng số mặt hàng: {0}'}" />
             </StackLayout>
 
@@ -21,7 +24,9 @@
                     Grid.Column="1"
                     Command="{Binding CreateItemCommand}"
                     BackgroundColor="#3498db"
-                    TextColor="White" />
+                    TextColor="White"
+                    CornerRadius="10"
+                    Padding="10" />
         </Grid>
 
         <!-- Filter Tabs -->
@@ -72,12 +77,12 @@
 
         <!-- Shop Items List -->
         <RefreshView Grid.Row="1"
-                    IsRefreshing="{Binding IsRefreshing}"
-                    Command="{Binding RefreshCommand}"
-                    Margin="0,35,0,0">
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding RefreshCommand}"
+                     Margin="0,35,0,0">
             <CollectionView ItemsSource="{Binding ShopItems}"
-                           SelectionMode="Single"
-                           SelectionChanged="OnItemSelected">
+                            SelectionMode="Single"
+                            SelectionChanged="OnItemSelected">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:ShopItemModel">
                         <SwipeView>
@@ -103,8 +108,8 @@
 
                                 <!-- Item Info -->
                                 <StackLayout Grid.Column="1"
-                                           Margin="10,0"
-                                           VerticalOptions="Center">
+                                             Margin="10,0"
+                                             VerticalOptions="Center">
                                     <Label Text="{Binding Title}"
                                            FontAttributes="Bold" />
 
@@ -151,9 +156,9 @@
 
                 <CollectionView.EmptyView>
                     <StackLayout VerticalOptions="Center"
-                               HorizontalOptions="Center"
-                               Spacing="10"
-                               Padding="20">
+                                 HorizontalOptions="Center"
+                                 Spacing="10"
+                                 Padding="20">
                         <Image Source="empty_shop.png"
                                HeightRequest="100"
                                WidthRequest="100" />
@@ -201,7 +206,11 @@
 
                     <Button Text="Đổi biểu tượng"
                             Command="{Binding PickIconCommand}"
-                            HorizontalOptions="Center" />
+                            HorizontalOptions="Center"
+                            BackgroundColor="#3498db"
+                            TextColor="White"
+                            CornerRadius="10"
+                            Padding="10" />
 
                     <!-- Item Fields -->
                     <StackLayout>
@@ -218,8 +227,8 @@
 
                     <StackLayout>
                         <Label Text="Loại mặt hàng" />
-                        <Picker ItemsSource="{Binding ItemTypesVi}"
-                                SelectedItem="{Binding TypeVi}"
+                        <Picker ItemsSource="{Binding ItemTypes}"
+                                SelectedItem="{Binding Type}"
                                 Title="Chọn loại mặt hàng" />
                     </StackLayout>
 
@@ -269,9 +278,9 @@
                     </StackLayout>
 
                     <StackLayout Orientation="Horizontal"
-                                HorizontalOptions="Center"
-                                Spacing="20"
-                                Margin="0,10,0,0">
+                                 HorizontalOptions="Center"
+                                 Spacing="20"
+                                 Margin="0,10,0,0">
                         <Button Text="Lưu"
                                 Command="{Binding SaveItemCommand}"
                                 BackgroundColor="#2ecc71"
@@ -290,10 +299,10 @@
 
         <!-- Loading Indicator -->
         <ActivityIndicator Grid.RowSpan="3"
-                         IsRunning="{Binding IsLoading}"
-                         IsVisible="{Binding IsLoading}"
-                         Color="#3498db"
-                         HorizontalOptions="Center"
-                         VerticalOptions="Center" />
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="#3498db"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
     </Grid>
 </ContentPage>

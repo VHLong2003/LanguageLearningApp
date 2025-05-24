@@ -13,7 +13,7 @@
             ApiKey = "AIzaSyDcRMJ3I57o6EP1dzGCHorqmubiY6LAZVM";
             AuthDomain = "languagelearningapp-f88e7.firebaseapp.com";
             ProjectId = "languagelearningapp-f88e7";
-            StorageBucket = "languagelearningapp-f88e7.appspot.com";
+            StorageBucket = "languagelearningapp-f88e7.firebasestorage.app";
             DatabaseUrl = "https://languagelearningapp-f88e7-default-rtdb.firebaseio.com/";
         }
     }

@@ -1,308 +1,78 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.Admin"
-             xmlns:models="clr-namespace:LanguageLearningApp.Models"
              x:Class="LanguageLearningApp.Views.Admin.QuestionsManagementPage"
-             Title="Question Management">
+             x:Name="ThisPage"
+             Title="Quản lý câu hỏi">
 
-
-    <Grid RowDefinitions="Auto,*,Auto">
-
-        <!-- Header -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="15">
-            <StackLayout Grid.Column="0">
-                <Label Text="{Binding CurrentLesson.Title, StringFormat='Lesson: {0}'}"
-                      FontSize="18"
-                      FontAttributes="Bold" />
-                <Label Text="{Binding Questions.Count, StringFormat='Total Questions: {0}'}" />
-            </StackLayout>
-
-            <StackLayout Grid.Column="1" Orientation="Horizontal">
-                <Button Text="Add Question"
-                        Command="{Binding CreateQuestionCommand}"
-                        BackgroundColor="#3498db"
-                        TextColor="White"
-                        Margin="0,0,10,0" />
-
-                <Button Text="Back"
-                        Command="{Binding BackToLessonsCommand}" />
-            </StackLayout>
-        </Grid>
-
-        <!-- Questions List -->
-        <RefreshView Grid.Row="1"
-                    IsRefreshing="{Binding IsRefreshing}"
-                    Command="{Binding RefreshCommand}">
-            <CollectionView ItemsSource="{Binding Questions}"
-                           SelectionMode="Single"
-                           SelectionChanged="OnQuestionSelected">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:QuestionModel">
-                        <SwipeView>
-                            <SwipeView.RightItems>
-                                <SwipeItems>
-                                    <SwipeItem Text="Delete"
-                                               BackgroundColor="Red"
-                                               Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminQuestionViewModel}}, Path=DeleteQuestionCommand}"
-                                               CommandParameter="{Binding .}" />
-                                </SwipeItems>
-                            </SwipeView.RightItems>
-
-                            <Grid Padding="10" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto">
-                                <!-- Order Number -->
-                                <Frame Grid.Row="0"
-                                       Grid.Column="0"
-                                       Grid.RowSpan="3"
-                                       CornerRadius="20"
-                                       HeightRequest="40"
-                                       WidthRequest="40"
-                                       Padding="0"
-                                       BackgroundColor="#3498db">
-                                    <Label Text="{Binding Order}"
-                                           TextColor="White"
-                                           FontAttributes="Bold"
-                                           HorizontalOptions="Center"
-                                           VerticalOptions="Center" />
-                                </Frame>
-
-                                <!-- Question Info -->
-                                <Label Text="{Binding Content}"
-                                       Grid.Row="0"
-                                       Grid.Column="1"
-                                       FontAttributes="Bold"
-                                       Margin="10,0,0,0"
-                                       LineBreakMode="TailTruncation"
-                                       MaxLines="2" />
-
-                                <Label Text="{Binding Type}"
-                                       Grid.Row="1"
-                                       Grid.Column="1"
-                                       TextColor="Gray"
-                                       FontSize="Small"
-                                       Margin="10,0,0,0" />
-
-                                <StackLayout Grid.Row="2"
-                                             Grid.Column="1"
-                                             Orientation="Horizontal"
-                                             Spacing="10"
-                                             Margin="10,5,0,0">
-                                    <Label Text="{Binding Points, StringFormat='Points: {0}'}"
-                                           TextColor="#27ae60"
-                                           FontSize="Small"
-                                           FontAttributes="Bold" />
-
-                                    <Label Text="{Binding TimeLimit, StringFormat='Time: {0}s'}"
-                                           TextColor="#e67e22"
-                                           FontSize="Small" />
+    <ScrollView>
+        <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+            <StackLayout Spacing="16" Padding="16">
+                <Label Text="QUẢN LÝ CÂU HỎI" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center"/>
+                <Label Text="{Binding CurrentLesson.Title}" FontSize="18" FontAttributes="Bold" TextColor="#0284C7" HorizontalOptions="Center"/>
+                <Button Text="+ Tạo câu hỏi mới" Command="{Binding CreateQuestionCommand}" BackgroundColor="#2563EB" TextColor="White" CornerRadius="8" />
+                <CollectionView ItemsSource="{Binding Questions}" SelectedItem="{Binding SelectedQuestion, Mode=TwoWay}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame Margin="0,8" Padding="10" CornerRadius="14" HasShadow="True" BackgroundColor="#F0F9FF">
+                                <StackLayout Orientation="Horizontal" Spacing="10" VerticalOptions="Center">
+                                    <Image Source="{Binding ImageUrl}" HeightRequest="48" WidthRequest="48" Aspect="AspectFill" />
+                                    <StackLayout VerticalOptions="Center" Spacing="4" WidthRequest="160">
+                                        <Label Text="{Binding Content}" FontAttributes="Bold" FontSize="15" />
+                                        <Label Text="{Binding Type}" FontSize="12" TextColor="#0284C7" />
+                                    </StackLayout>
+                                    <StackLayout HorizontalOptions="EndAndExpand" Orientation="Horizontal" Spacing="6">
+                                        <Button Text="▲" Command="{Binding BindingContext.MoveUpCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
+                                        <Button Text="▼" Command="{Binding BindingContext.MoveDownCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
+                                        <Button Text="Xóa" Command="{Binding BindingContext.DeleteQuestionCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" TextColor="Red" />
+                                    </StackLayout>
                                 </StackLayout>
-
-                                <!-- Reorder Buttons -->
-                                <StackLayout Grid.Row="0"
-                                             Grid.RowSpan="3"
-                                             Grid.Column="2"
-                                             Orientation="Horizontal"
-                                             Spacing="5"
-                                             VerticalOptions="Center">
-
-                                    <Button Text="↑"
-                                            HeightRequest="30"
-                                            WidthRequest="40"
-                                            CornerRadius="15"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminQuestionViewModel}}, Path=MoveUpCommand}"
-                                            CommandParameter="{Binding .}" />
-
-                                    <Button Text="↓"
-                                            HeightRequest="30"
-                                            WidthRequest="40"
-                                            CornerRadius="15"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminQuestionViewModel}}, Path=MoveDownCommand}"
-                                            CommandParameter="{Binding .}" />
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                <!-- Biểu mẫu chỉnh sửa/tạo câu hỏi -->
+                <Frame Padding="16" CornerRadius="16" BackgroundColor="#CFFAFE" IsVisible="{Binding IsEditing}">
+                    <ScrollView>
+                        <StackLayout Spacing="10">
+                            <Entry Placeholder="Nội dung câu hỏi" Text="{Binding Content}"/>
+                            <Picker Title="Loại câu hỏi" ItemsSource="{Binding QuestionTypes}" SelectedItem="{Binding Type}"/>
+                            <Entry Placeholder="Điểm số" Text="{Binding Points}" Keyboard="Numeric"/>
+                            <Entry Placeholder="Thứ tự" Text="{Binding Order}" Keyboard="Numeric"/>
+                            <Entry Placeholder="Thời gian giới hạn (giây)" Text="{Binding TimeLimit}" Keyboard="Numeric"/>
+                            <Entry Placeholder="Giải thích (tuỳ chọn)" Text="{Binding Explanation}"/>
+                            <Image Source="{Binding ImageUrl}" HeightRequest="64" Aspect="AspectFill"/>
+                            <Button Text="Chọn ảnh cho câu hỏi" Command="{Binding PickImageCommand}"/>
+                            <Entry Placeholder="Audio URL (nếu có)" Text="{Binding AudioUrl}"/>
+                            <Entry Placeholder="Đáp án đúng" Text="{Binding CorrectAnswer}"/>
+                            <!-- MultipleChoice Options -->
+                            <StackLayout IsVisible="{Binding Type, Converter={StaticResource QuestionTypeIsMultipleChoiceConverter}}">
+                                <Label Text="Tuỳ chọn câu trả lời:"/>
+                                <CollectionView ItemsSource="{Binding Options}">
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackLayout Orientation="Horizontal" Spacing="6">
+                                                <Label Text="{Binding .}"/>
+                                                <Button Text="X" Command="{Binding BindingContext.RemoveOptionCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" TextColor="Red"/>
+                                            </StackLayout>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                                <StackLayout Orientation="Horizontal" Spacing="8">
+                                    <Entry Placeholder="Tuỳ chọn mới" Text="{Binding NewOption}" WidthRequest="150"/>
+                                    <Button Text="Thêm" Command="{Binding AddOptionCommand}"/>
                                 </StackLayout>
-                            </Grid>
-                        </SwipeView>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-
-                <CollectionView.EmptyView>
-                    <StackLayout VerticalOptions="Center"
-                               HorizontalOptions="Center"
-                               Spacing="10"
-                               Padding="20">
-                        <Image Source="no_questions.png"
-                               HeightRequest="100"
-                               WidthRequest="100" />
-                        <Label Text="No questions found for this lesson"
-                               HorizontalOptions="Center" />
-                        <Button Text="Add First Question"
-                                Command="{Binding CreateQuestionCommand}"
-                                BackgroundColor="#3498db"
-                                TextColor="White"
-                                HorizontalOptions="Center" />
-                    </StackLayout>
-                </CollectionView.EmptyView>
-            </CollectionView>
+                            </StackLayout>
+                            <StackLayout Orientation="Horizontal" HorizontalOptions="EndAndExpand" Spacing="10">
+                                <Button Text="Lưu" Command="{Binding SaveQuestionCommand}" BackgroundColor="#22C55E" TextColor="White" />
+                                <Button Text="Hủy" Command="{Binding CancelEditCommand}" BackgroundColor="#EF4444" TextColor="White" />
+                            </StackLayout>
+                        </StackLayout>
+                    </ScrollView>
+                </Frame>
+                <Label Text="{Binding ErrorMessage}" TextColor="Red" FontAttributes="Italic" IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
+                <Button Text="← Quay lại bài học" Command="{Binding BackToLessonsCommand}" HorizontalOptions="Start"/>
+            </StackLayout>
         </RefreshView>
-
-        <!-- Edit Question Form (Shown when editing) -->
-        <Frame Grid.Row="0" Grid.RowSpan="3"
-               IsVisible="{Binding IsEditing}"
-               BackgroundColor="White"
-               HasShadow="True"
-               CornerRadius="10"
-               Margin="20">
-            <ScrollView>
-                <StackLayout Spacing="15" Padding="10">
-                    <Label Text="{Binding IsNewQuestion, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Create New Question|Edit Question'}"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           HorizontalOptions="Center" />
-
-                    <!-- Error Message -->
-                    <Label Text="{Binding ErrorMessage}"
-                           TextColor="Red"
-                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}"
-                           HorizontalOptions="Center" />
-
-                    <!-- Question Image -->
-                    <Frame CornerRadius="10"
-                           HeightRequest="120"
-                           IsClippedToBounds="True"
-                           Padding="0"
-                           HorizontalOptions="Center"
-                           IsVisible="{Binding ImageUrl, Converter={StaticResource StringToBoolConverter}}">
-                        <Grid>
-                            <Image Source="{Binding ImageUrl}"
-                                   Aspect="AspectFill" />
-                        </Grid>
-                    </Frame>
-
-                    <Button Text="Select Image"
-                            Command="{Binding PickImageCommand}"
-                            HorizontalOptions="Center" />
-
-                    <!-- Question Fields -->
-                    <StackLayout>
-                        <Label Text="Question Content" />
-                        <Editor Text="{Binding Content}"
-                                Placeholder="Enter question content"
-                                HeightRequest="80" />
-                    </StackLayout>
-
-                    <StackLayout>
-                        <Label Text="Question Type" />
-                        <Picker ItemsSource="{Binding QuestionTypes}"
-                                SelectedItem="{Binding Type}" />
-                    </StackLayout>
-
-                    <StackLayout>
-                        <Label Text="Explanation (shown after answering)" />
-                        <Editor Text="{Binding Explanation}"
-                                Placeholder="Enter explanation for the correct answer"
-                                HeightRequest="60" />
-                    </StackLayout>
-
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10">
-                        <StackLayout Grid.Row="0" Grid.Column="0">
-                            <Label Text="Points" />
-                            <Entry Text="{Binding Points}"
-                                   Keyboard="Numeric"
-                                   Placeholder="Points for correct answer" />
-                        </StackLayout>
-
-                        <StackLayout Grid.Row="0" Grid.Column="1">
-                            <Label Text="Order" />
-                            <Entry Text="{Binding Order}"
-                                   Keyboard="Numeric"
-                                   Placeholder="Question order" />
-                        </StackLayout>
-
-                        <StackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
-                            <Label Text="Time Limit (seconds)" />
-                            <Entry Text="{Binding TimeLimit}"
-                                   Keyboard="Numeric"
-                                   Placeholder="Time limit in seconds" />
-                        </StackLayout>
-                    </Grid>
-
-                    <!-- Options (for multiple choice) -->
-                    <StackLayout IsVisible="{Binding Type, Converter={StaticResource EnumEqualConverter}, ConverterParameter={x:Static models:QuestionType.MultipleChoice}}">
-                        <Label Text="Answer Options"
-                               FontAttributes="Bold" />
-
-                        <CollectionView ItemsSource="{Binding Options}"
-                                       HeightRequest="150">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Padding="5" ColumnDefinitions="*,Auto,Auto">
-                                        <Label Text="{Binding .}"
-                                               VerticalOptions="Center"
-                                               Grid.Column="0" />
-
-                                        <RadioButton Grid.Column="1"
-                                                     IsChecked="{Binding ., Converter={StaticResource StringEqualConverter}, ConverterParameter={Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminQuestionViewModel}}, Path=CorrectAnswer}}"
-                                                     CheckedChanged="OnCorrectAnswerSelected"
-                                                     VerticalOptions="Center" />
-
-
-                                        <Button Text="X"
-                                                Grid.Column="2"
-                                                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminQuestionViewModel}}, Path=RemoveOptionCommand}"
-                                                CommandParameter="{Binding .}"
-                                                HeightRequest="30"
-                                                WidthRequest="30"
-                                                CornerRadius="15"
-                                                BackgroundColor="#e74c3c"
-                                                TextColor="White" />
-                                    </Grid>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
-
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                            <Entry Placeholder="Add new option..."
-                                   Text="{Binding NewOption}"
-                                   Grid.Column="0" />
-
-                            <Button Text="Add"
-                                    Command="{Binding AddOptionCommand}"
-                                    Grid.Column="1" />
-                        </Grid>
-                    </StackLayout>
-
-                    <!-- Answer for non-multiple choice -->
-                    <StackLayout IsVisible="{Binding Type, Converter={StaticResource EnumNotEqualConverter}, ConverterParameter={x:Static models:QuestionType.MultipleChoice}}">
-                        <Label Text="Correct Answer" />
-                        <Entry Text="{Binding CorrectAnswer}"
-                               Placeholder="Enter the correct answer" />
-                    </StackLayout>
-
-                    <StackLayout Orientation="Horizontal"
-                                HorizontalOptions="Center"
-                                Spacing="20"
-                                Margin="0,10,0,0">
-                        <Button Text="Save"
-                                Command="{Binding SaveQuestionCommand}"
-                                BackgroundColor="#2ecc71"
-                                TextColor="White"
-                                WidthRequest="120" />
-
-                        <Button Text="Cancel"
-                                Command="{Binding CancelEditCommand}"
-                                BackgroundColor="#e74c3c"
-                                TextColor="White"
-                                WidthRequest="120" />
-                    </StackLayout>
-                </StackLayout>
-            </ScrollView>
-        </Frame>
-
-        <!-- Loading Indicator -->
-        <ActivityIndicator Grid.RowSpan="3"
-                         IsRunning="{Binding IsLoading}"
-                         IsVisible="{Binding IsLoading}"
-                         Color="#3498db"
-                         HorizontalOptions="Center"
-                         VerticalOptions="Center" />
-    </Grid>
+    </ScrollView>
 </ContentPage>

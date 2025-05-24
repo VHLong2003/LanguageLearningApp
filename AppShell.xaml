@@ -23,14 +23,14 @@
                 Route="home" />
         </Tab>
 
-        <Tab Title="Courses" Icon="courses_icon.png">
+        <Tab Title="Courses" Icon="courses.png">
             <ShellContent 
                 Title="Courses"
                 ContentTemplate="{DataTemplate userViews:CoursesPage}"
                 Route="courses" />
         </Tab>
 
-        <Tab Title="Leaderboard" Icon="leaderboard_icon.png">
+        <Tab Title="Leaderboard" Icon="leaderboard.png">
             <ShellContent 
                 Title="Leaderboard"
                 ContentTemplate="{DataTemplate userViews:LeaderboardPage}"
@@ -45,14 +45,14 @@
         </Tab>
 
 
-        <Tab Title="Shop" Icon="shop_icon.png">
+        <Tab Title="Shop" Icon="shop.png">
             <ShellContent 
                 Title="Shop"
                 ContentTemplate="{DataTemplate userViews:ShopPage}"
                 Route="shop" />
         </Tab>
 
-        <Tab Title="Profile" Icon="profile_icon.png">
+        <Tab Title="Profile" Icon="profile.png">
             <ShellContent 
                 Title="Profile"
                 ContentTemplate="{DataTemplate userViews:ProfilePage}"
@@ -69,14 +69,14 @@
                 Route="adminHome" />
         </Tab>
 
-        <Tab Title="Users" Icon="users_icon.png">
+        <Tab Title="Users" Icon="account.png">
             <ShellContent 
                 Title="Users"
                 ContentTemplate="{DataTemplate adminViews:UsersManagementPage}"
                 Route="users" />
         </Tab>
 
-        <Tab Title="Courses" Icon="courses_icon.png">
+        <Tab Title="Courses" Icon="courses.png">
             <ShellContent 
                 Title="Courses"
                 ContentTemplate="{DataTemplate adminViews:CoursesManagementPage}"

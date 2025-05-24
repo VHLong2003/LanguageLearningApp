@@ -96,7 +96,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             LogoutCommand = new Command(async () => await LogoutAsync());
             ManageUsersCommand = new Command(async () => await Shell.Current.GoToAsync("//users"));
             ManageCoursesCommand = new Command(async () => await Shell.Current.GoToAsync("//adminCourses"));
-            ManageLessonsCommand = new Command(async () => await Shell.Current.GoToAsync("//lessons"));
             ManageShopCommand = new Command(async () => await Shell.Current.GoToAsync("//adminShop"));
             UpdateLeaderboardCommand = new Command(async () => await UpdateLeaderboardAsync());
         }

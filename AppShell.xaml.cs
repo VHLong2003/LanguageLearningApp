@@ -10,18 +10,21 @@ namespace LanguageLearningApp
         {
             InitializeComponent();
 
-            // Register routes
+            // Register routes for authentication
             Routing.RegisterRoute("register", typeof(RegisterPage));
-            Routing.RegisterRoute("forgot_password", typeof(ForgotPasswordPage));
-            Routing.RegisterRoute("course_detail", typeof(CourseDetailPage));
+            Routing.RegisterRoute("forgotPassword", typeof(ForgotPasswordPage)); 
+
+            // Register routes for user pages
+            Routing.RegisterRoute("courseDetail", typeof(CourseDetailPage)); 
             Routing.RegisterRoute("lesson", typeof(LessonPage));
+            Routing.RegisterRoute("userProfile", typeof(ProfilePage)); 
             Routing.RegisterRoute("shop", typeof(ShopPage));
 
-            // Admin routes
-            Routing.RegisterRoute("user_details", typeof(UsersManagementPage));
-            Routing.RegisterRoute("course_editor", typeof(CoursesManagementPage));
-            Routing.RegisterRoute("lesson_editor", typeof(LessonsManagementPage));
-            Routing.RegisterRoute("question_editor", typeof(QuestionsManagementPage));
+            // Register routes for admin pages
+            Routing.RegisterRoute("userProgress", typeof(UserProgressPage)); 
+            Routing.RegisterRoute("lessonManagement", typeof(LessonsManagementPage)); 
+            Routing.RegisterRoute("questionManagement", typeof(QuestionsManagementPage)); 
+            Routing.RegisterRoute("badgeManagement", typeof(BadgeManagementPage)); 
         }
     }
 }

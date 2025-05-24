@@ -1,209 +1,57 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.Admin"
-             xmlns:models="clr-namespace:LanguageLearningApp.Models"
              x:Class="LanguageLearningApp.Views.Admin.CoursesManagementPage"
-             Title="Quản lý khoá học">
+             x:Name="ThisPage"
+             Title="Quản lý khóa học">
 
-    <Grid RowDefinitions="Auto,*,Auto">
-        <!-- Header: Thanh tìm kiếm + nút thêm mới -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="15">
-            <SearchBar Grid.Column="0"
-                       Placeholder="Tìm kiếm theo tên khoá học..."
-                       Text="{Binding SearchQuery}" />
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding LoadCoursesCommand}">
+        <StackLayout Spacing="16" Padding="16">
+            <Label Text="QUẢN LÝ KHÓA HỌC" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center"/>
+            <Button Text="+ Tạo khóa học mới" Command="{Binding NewCourseCommand}" BackgroundColor="#6366F1" TextColor="White" CornerRadius="8" />
 
-            <Button Text="Thêm khoá học"
-                    Grid.Column="1"
-                    Command="{Binding NewCourseCommand}"
-                    BackgroundColor="#3498db"
-                    TextColor="White" />
-        </Grid>
-
-        <!-- Danh sách khoá học -->
-        <RefreshView Grid.Row="1"
-                     IsRefreshing="{Binding IsRefreshing}"
-                     Command="{Binding LoadCoursesCommand}">
-            <CollectionView ItemsSource="{Binding Courses}"
-                            SelectionMode="Single"
-                            SelectionChanged="OnCourseSelected">
+            <CollectionView ItemsSource="{Binding Courses}" SelectedItem="{Binding SelectedCourse, Mode=TwoWay}">
                 <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:CourseModel">
-                        <SwipeView>
-                            <SwipeView.RightItems>
-                                <SwipeItems>
-                                    <SwipeItem Text="Xoá"
-                                               BackgroundColor="Red"
-                                               Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminCourseViewModel}}, Path=DeleteCourseCommand}"
-                                               CommandParameter="{Binding .}" />
-                                    <SwipeItem Text="Bài học"
-                                               BackgroundColor="Green"
-                                               Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminCourseViewModel}}, Path=ManageLessonsCommand}"
-                                               CommandParameter="{Binding .}" />
-                                </SwipeItems>
-                            </SwipeView.RightItems>
-
-                            <Grid Padding="10" ColumnDefinitions="Auto,*,Auto,Auto">
-                                <!-- Hình ảnh -->
-                                <Frame Grid.Column="0"
-                                       CornerRadius="15"
-                                       HeightRequest="70"
-                                       WidthRequest="70"
-                                       Padding="0"
-                                       IsClippedToBounds="True"
-                                       BackgroundColor="#e9ecef">
-                                    <Image Source="{Binding ImageUrl, TargetNullValue='default_course.png'}"
-                                           Aspect="AspectFill" />
-                                </Frame>
-
-                                <!-- Thông tin -->
-                                <StackLayout Grid.Column="1" VerticalOptions="Center" Margin="10,0">
-                                    <Label Text="{Binding Title}" FontAttributes="Bold" FontSize="17"/>
-                                    <Label Text="{Binding Description}" FontSize="13" TextColor="Gray" MaxLines="2" />
-                                    <StackLayout Orientation="Horizontal" Spacing="8">
-                                        <Label Text="{Binding Type}" FontSize="12" TextColor="#2980b9"/>
-                                        <Label Text="{Binding DifficultyLevel, StringFormat='Cấp độ: {0}'}" FontSize="12" TextColor="#f39c12"/>
-                                        <Label Text="{Binding TotalLessons, StringFormat='Bài học: {0}'}" FontSize="12" TextColor="#2ecc71"/>
-                                    </StackLayout>
+                    <DataTemplate>
+                        <Frame Margin="0,8" Padding="10" CornerRadius="14" HasShadow="True" BackgroundColor="#F3F4F6">
+                            <StackLayout Orientation="Horizontal" Spacing="10" VerticalOptions="Center">
+                                <Image Source="{Binding ImageUrl}" HeightRequest="64" WidthRequest="64" Aspect="AspectFill" />
+                                <StackLayout VerticalOptions="Center" Spacing="4" WidthRequest="180">
+                                    <Label Text="{Binding Title}" FontAttributes="Bold" FontSize="18" />
+                                    <Label Text="{Binding Description}" FontSize="13" TextColor="#6B7280" LineBreakMode="TailTruncation" MaxLines="2" />
+                                    <Label Text="{Binding Type}" FontSize="12" TextColor="#6366F1" />
                                 </StackLayout>
-
-                                <!-- Xuất bản -->
-                                <Label Grid.Column="2"
-                                       Text="{Binding IsPublished, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Đã xuất bản|Nháp'}"
-                                       FontAttributes="Bold"
-                                       FontSize="12"
-                                       TextColor="{Binding IsPublished, Converter={StaticResource BoolToColorConverter}, ConverterParameter='Green|Gray'}"
-                                       VerticalOptions="Center"/>
-
-                                <!-- Quản lý bài học -->
-                                <Button Grid.Column="3"
-                                        Text="Bài học"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:AdminCourseViewModel}}, Path=ManageLessonsCommand}"
-                                        CommandParameter="{Binding .}"
-                                        FontSize="12"
-                                        Padding="5"
-                                        BackgroundColor="#2980b9"
-                                        TextColor="White"
-                                        CornerRadius="10"
-                                        VerticalOptions="Center"/>
-                            </Grid>
-                        </SwipeView>
+                                <StackLayout HorizontalOptions="EndAndExpand" Orientation="Horizontal" Spacing="6">
+                                    <Button Text="Bài học" Command="{Binding BindingContext.ManageLessonsCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
+                                    <Button Text="Sửa" Command="{Binding BindingContext.SaveCourseCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
+                                    <Button Text="Xóa" Command="{Binding BindingContext.DeleteCourseCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" TextColor="Red" />
+                                </StackLayout>
+                            </StackLayout>
+                        </Frame>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
-
-                <CollectionView.EmptyView>
-                    <StackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="10" Padding="20">
-                        <Image Source="no_courses.png"
-                               HeightRequest="100"
-                               WidthRequest="100" />
-                        <Label Text="Chưa có khoá học nào"
-                               HorizontalOptions="Center" />
-                        <Button Text="Thêm khoá học mới"
-                                Command="{Binding NewCourseCommand}"
-                                BackgroundColor="#3498db"
-                                TextColor="White"
-                                HorizontalOptions="Center" />
-                    </StackLayout>
-                </CollectionView.EmptyView>
             </CollectionView>
-        </RefreshView>
 
-        <!-- Form chỉnh sửa/thêm mới khoá học -->
-        <Frame Grid.Row="0" Grid.RowSpan="3"
-               IsVisible="{Binding IsEditing}"
-               BackgroundColor="White"
-               HasShadow="True"
-               CornerRadius="10"
-               Margin="20">
-            <ScrollView>
-                <StackLayout Spacing="15" Padding="10">
-                    <Label Text="{Binding IsNewCourse, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Tạo mới khoá học|Chỉnh sửa khoá học'}"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           HorizontalOptions="Center" />
-
-                    <!-- Thông báo lỗi -->
-                    <Label Text="{Binding ErrorMessage}"
-                           TextColor="Red"
-                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}"
-                           HorizontalOptions="Center" />
-
-                    <!-- Ảnh khoá học -->
-                    <Frame CornerRadius="15"
-                           HeightRequest="120"
-                           WidthRequest="120"
-                           Padding="0"
-                           HorizontalOptions="Center"
-                           IsClippedToBounds="True"
-                           BackgroundColor="#f1f1f1">
-                        <Image Source="{Binding ImageUrl, TargetNullValue='default_course.png'}"
-                               Aspect="AspectFill" />
-                    </Frame>
-
-                    <Button Text="Đổi ảnh"
-                            Command="{Binding PickImageCommand}"
-                            HorizontalOptions="Center" />
-
-                    <!-- Trường nhập liệu -->
-                    <StackLayout>
-                        <Label Text="Tên khoá học" />
-                        <Entry Text="{Binding Title}"
-                               Placeholder="Nhập tên khoá học" />
-                    </StackLayout>
-
-                    <StackLayout>
-                        <Label Text="Mô tả" />
-                        <Entry Text="{Binding Description}"
-                               Placeholder="Nhập mô tả ngắn về khoá học" />
-                    </StackLayout>
-
-                    <StackLayout>
-                        <Label Text="Loại khoá học" />
-                        <Picker ItemsSource="{Binding CourseTypes}"
-                                SelectedItem="{Binding Type}" />
-                    </StackLayout>
-
-                    <StackLayout>
-                        <Label Text="Cấp độ khó" />
-                        <Entry Text="{Binding DifficultyLevel}" Keyboard="Numeric" Placeholder="Nhập cấp độ (1-10)" />
-                    </StackLayout>
-
-                    <StackLayout>
-                        <Label Text="Điểm yêu cầu để mở khoá" />
-                        <Entry Text="{Binding RequiredPoints}" Keyboard="Numeric" Placeholder="Nhập điểm yêu cầu (có thể để 0)" />
-                    </StackLayout>
-
-                    <StackLayout Orientation="Horizontal" Spacing="15">
-                        <Label Text="Xuất bản" VerticalOptions="Center" />
-                        <Switch IsToggled="{Binding IsPublished}" />
-                    </StackLayout>
-
-                    <StackLayout Orientation="Horizontal"
-                                HorizontalOptions="Center"
-                                Spacing="20"
-                                Margin="0,10,0,0">
-                        <Button Text="Lưu"
-                                Command="{Binding SaveCourseCommand}"
-                                BackgroundColor="#2ecc71"
-                                TextColor="White"
-                                WidthRequest="120" />
-
-                        <Button Text="Huỷ"
-                                Command="{Binding CancelEditCommand}"
-                                BackgroundColor="#e74c3c"
-                                TextColor="White"
-                                WidthRequest="120" />
+            <!-- Biểu mẫu chỉnh sửa/tạo khóa học -->
+            <Frame Padding="16" CornerRadius="16" BackgroundColor="#E0E7FF" IsVisible="{Binding IsEditing}">
+                <StackLayout Spacing="10">
+                    <Entry Placeholder="Tiêu đề khóa học" Text="{Binding Title}"/>
+                    <Editor Placeholder="Mô tả khóa học" Text="{Binding Description}" AutoSize="TextChanges" HeightRequest="60"/>
+                    <Picker Title="Loại khóa học" ItemsSource="{Binding CourseTypes}" SelectedItem="{Binding Type}"/>
+                    <Stepper Minimum="1" Maximum="10" Increment="1" Value="{Binding DifficultyLevel}"/>
+                    <Entry Placeholder="Điểm yêu cầu để mở khóa" Text="{Binding RequiredPoints}" Keyboard="Numeric"/>
+                    <Image Source="{Binding ImageUrl}" HeightRequest="100" Aspect="AspectFill"/>
+                    <Button Text="Chọn hình ảnh" Command="{Binding PickImageCommand}"/>
+                    <Switch IsToggled="{Binding IsPublished}"/>
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="EndAndExpand" Spacing="10">
+                        <Button Text="Lưu" Command="{Binding SaveCourseCommand}" BackgroundColor="#22C55E" TextColor="White" />
+                        <Button Text="Hủy" Command="{Binding CancelEditCommand}" BackgroundColor="#EF4444" TextColor="White" />
                     </StackLayout>
                 </StackLayout>
-            </ScrollView>
-        </Frame>
+            </Frame>
 
-        <!-- Loading Indicator -->
-        <ActivityIndicator Grid.RowSpan="3"
-                         IsRunning="{Binding IsBusy}"
-                         IsVisible="{Binding IsBusy}"
-                         Color="#3498db"
-                         HorizontalOptions="Center"
-                         VerticalOptions="Center" />
-    </Grid>
+            <Label Text="{Binding ErrorMessage}" TextColor="Red" FontAttributes="Italic" 
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
+        </StackLayout>
+    </RefreshView>
 </ContentPage>

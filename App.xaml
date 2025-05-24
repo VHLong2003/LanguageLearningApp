@@ -47,6 +47,13 @@
             <converters:LessonIdToTitleConverter x:Key="LessonIdToTitleConverter" />
             <converters:EnumConverter x:Key="EnumConverter"/>
             <converters:NotCurrentUserConverter x:Key="NotCurrentUserConverter"/>
+            <converters:ItemTypeToVietnameseConverter x:Key="ItemTypeToVietnameseConverter"/>
+            <converters:QuestionTypeToDisplayNameConverter x:Key="QuestionTypeToDisplayNameConverter" />
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+            <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
+            <converters:StringEqualityConverter x:Key="StringEqualityConverter" />
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+
 
             <!-- Styles -->
             <!-- Button Styles -->

@@ -19,6 +19,7 @@ namespace LanguageLearningApp.Services
             _firebaseConfig = firebaseConfig;
         }
 
+        // Lấy tất cả khóa học từ cơ sở dữ liệu
         public async Task<List<CourseModel>> GetAllCoursesAsync(string idToken)
         {
             try
@@ -53,12 +54,14 @@ namespace LanguageLearningApp.Services
             }
         }
 
+        // Lấy các khóa học đã được công bố
         public async Task<List<CourseModel>> GetPublishedCoursesAsync(string idToken)
         {
             var allCourses = await GetAllCoursesAsync(idToken);
             return allCourses.FindAll(c => c.IsPublished);
         }
 
+        // Lấy khóa học theo ID
         public async Task<CourseModel> GetCourseByIdAsync(string courseId, string idToken)
         {
             try
@@ -85,6 +88,7 @@ namespace LanguageLearningApp.Services
             }
         }
 
+        // Tạo một khóa học mới
         public async Task<string> CreateCourseAsync(CourseModel course, string idToken)
         {
             try
@@ -102,7 +106,7 @@ namespace LanguageLearningApp.Services
                     var result = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
 
                     if (result.ContainsKey("name"))
-                        return result["name"]; // This is the generated Firebase key
+                        return result["name"]; // Đây là khóa Firebase được tạo tự động
                 }
 
                 return null;
@@ -113,6 +117,7 @@ namespace LanguageLearningApp.Services
             }
         }
 
+        // Cập nhật thông tin khóa học
         public async Task<bool> UpdateCourseAsync(CourseModel course, string idToken)
         {
             try
@@ -132,6 +137,7 @@ namespace LanguageLearningApp.Services
             }
         }
 
+        // Xóa một khóa học
         public async Task<bool> DeleteCourseAsync(string courseId, string idToken)
         {
             try
@@ -147,6 +153,7 @@ namespace LanguageLearningApp.Services
             }
         }
 
+        // Lấy các khóa học theo loại
         public async Task<List<CourseModel>> GetCoursesByTypeAsync(CourseType type, string idToken)
         {
             var allCourses = await GetPublishedCoursesAsync(idToken);

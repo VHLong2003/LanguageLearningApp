@@ -1,5 +1,6 @@
-﻿using LanguageLearningApp.ViewModels.Admin;
-using LanguageLearningApp.Models;
+﻿using LanguageLearningApp.Services;
+using LanguageLearningApp.ViewModels.Admin;
+using Microsoft.Maui.Controls;
 
 namespace LanguageLearningApp.Views.Admin
 {
@@ -8,30 +9,21 @@ namespace LanguageLearningApp.Views.Admin
         public LessonsManagementPage()
         {
             InitializeComponent();
-
-            // ViewModel đã được binding sẵn trong XAML
-            // Nếu DI không tự inject thì có thể tạo bằng code như sau:
-            // this.BindingContext = new AdminLessonViewModel(...);
+            BindingContext = new AdminLessonViewModel(
+                App.Services.GetService<LessonService>(),
+                App.Services.GetService<CourseService>(),
+                App.Services.GetService<StorageService>()
+            );
         }
 
-        // Xử lý sự kiện chọn bài học trong danh sách
-        private void OnLessonSelected(object sender, SelectionChangedEventArgs e)
+        protected override async void OnAppearing()
         {
-            if (BindingContext is not AdminLessonViewModel vm)
-                return;
-
-            var selectedLesson = e.CurrentSelection?.FirstOrDefault() as LessonModel;
-
-            // Nếu chọn đúng bài học thì cập nhật SelectedLesson trong ViewModel
-            if (selectedLesson != null)
+            base.OnAppearing();
+            if (BindingContext is AdminLessonViewModel vm)
             {
-                vm.SelectedLesson = selectedLesson;
-            }
-
-            // Bỏ chọn để UI đẹp (không highlight mãi)
-            if (sender is CollectionView collectionView)
-            {
-                collectionView.SelectedItem = null;
+                // Nếu CourseId đã truyền qua Route, sẽ tự động load dữ liệu
+                if (!string.IsNullOrEmpty(vm.CourseId))
+                    await vm.LoadCourseAndLessonsAsync();
             }
         }
     }

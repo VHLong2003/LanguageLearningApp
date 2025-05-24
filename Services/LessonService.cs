@@ -25,41 +25,69 @@ namespace LanguageLearningApp.Services
         {
             try
             {
-                // Query lessons by courseId
+                if (string.IsNullOrEmpty(courseId))
+                    throw new ArgumentException("CourseId không được để trống hoặc null.", nameof(courseId));
+
+                if (string.IsNullOrEmpty(idToken))
+                    throw new ArgumentException("idToken không được để trống hoặc null.", nameof(idToken));
+
+                // Ghi log yêu cầu
+                Console.WriteLine($"Đang lấy danh sách bài học cho CourseId: {courseId}");
+
+                // Truy vấn bài học theo courseId
                 var response = await _httpClient.GetAsync(
                     $"{_firebaseConfig.DatabaseUrl}/lessons.json?orderBy=\"courseId\"&equalTo=\"{courseId}\"&auth={idToken}");
 
-                if (response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var lessonsDictionary = JsonConvert.DeserializeObject<Dictionary<string, LessonModel>>(content);
-
-                    if (lessonsDictionary == null)
-                        return new List<LessonModel>();
-
-                    var lessons = new List<LessonModel>();
-                    foreach (var kvp in lessonsDictionary)
-                    {
-                        var lesson = kvp.Value;
-                        lesson.LessonId = kvp.Key;
-
-                        // Load questions for this lesson
-                        lesson.Questions = await _questionService.GetQuestionsByLessonIdAsync(lesson.LessonId, idToken);
-
-                        lessons.Add(lesson);
-                    }
-
-                    // Sort lessons by order
-                    lessons.Sort((x, y) => x.Order.CompareTo(y.Order));
-
-                    return lessons;
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Không thể lấy danh sách bài học cho CourseId {courseId}. Trạng thái: {response.StatusCode}, Lý do: {response.ReasonPhrase}, Nội dung: {errorContent}");
                 }
 
-                return new List<LessonModel>();
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Dữ liệu thô từ Firebase: {content}");
+
+                var lessonsDictionary = JsonConvert.DeserializeObject<Dictionary<string, LessonModel>>(content);
+                if (lessonsDictionary == null || lessonsDictionary.Count == 0)
+                {
+                    Console.WriteLine($"Không tìm thấy bài học nào cho CourseId: {courseId}");
+                    return new List<LessonModel>();
+                }
+
+                var lessons = new List<LessonModel>();
+                foreach (var kvp in lessonsDictionary)
+                {
+                    var lesson = kvp.Value;
+                    if (lesson == null)
+                    {
+                        Console.WriteLine($"Bỏ qua bài học null với ID: {kvp.Key}");
+                        continue;
+                    }
+
+                    lesson.LessonId = kvp.Key;
+                    Console.WriteLine($"Đang xử lý bài học: {lesson.Title} (ID: {lesson.LessonId}, CourseId: {lesson.CourseId})");
+
+                    // Tải câu hỏi cho bài học này
+                    lesson.Questions = await _questionService.GetQuestionsByLessonIdAsync(lesson.LessonId, idToken);
+                    if (lesson.Questions == null)
+                    {
+                        Console.WriteLine($"Không tìm thấy câu hỏi nào cho LessonId: {lesson.LessonId}");
+                        lesson.Questions = new List<QuestionModel>();
+                    }
+
+                    lessons.Add(lesson);
+                }
+
+                // Sắp xếp bài học theo thứ tự
+                lessons.Sort((x, y) => x.Order.CompareTo(y.Order));
+                Console.WriteLine($"Trả về {lessons.Count} bài học cho CourseId: {courseId}");
+
+                return lessons;
             }
-            catch
+            catch (Exception ex)
             {
-                return new List<LessonModel>();
+                Console.WriteLine($"Lỗi trong GetLessonsByCourseIdAsync: {ex.Message}");
+                throw; // Ném lại ngoại lệ để được xử lý bởi caller
             }
         }
 
@@ -67,30 +95,40 @@ namespace LanguageLearningApp.Services
         {
             try
             {
+                if (string.IsNullOrEmpty(lessonId))
+                    throw new ArgumentException("LessonId không được để Asc hoặc null.", nameof(lessonId));
+
+                if (string.IsNullOrEmpty(idToken))
+                    throw new ArgumentException("idToken không được để trống hoặc null.", nameof(idToken));
+
                 var response = await _httpClient.GetAsync(
                     $"{_firebaseConfig.DatabaseUrl}/lessons/{lessonId}.json?auth={idToken}");
 
-                if (response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var lesson = JsonConvert.DeserializeObject<LessonModel>(content);
-
-                    if (lesson != null)
-                    {
-                        lesson.LessonId = lessonId;
-
-                        // Load questions for this lesson
-                        lesson.Questions = await _questionService.GetQuestionsByLessonIdAsync(lessonId, idToken);
-                    }
-
-                    return lesson;
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Không thể lấy bài học với ID {lessonId}. Trạng thái: {response.StatusCode}, Lý do: {response.ReasonPhrase}, Nội dung: {errorContent}");
                 }
 
-                return null;
+                var content = await response.Content.ReadAsStringAsync();
+                var lesson = JsonConvert.DeserializeObject<LessonModel>(content);
+
+                if (lesson != null)
+                {
+                    lesson.LessonId = lessonId;
+                    lesson.Questions = await _questionService.GetQuestionsByLessonIdAsync(lessonId, idToken);
+                    if (lesson.Questions == null)
+                    {
+                        lesson.Questions = new List<QuestionModel>();
+                    }
+                }
+
+                return lesson;
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                Console.WriteLine($"Lỗi trong GetLessonByIdAsync: {ex.Message}");
+                throw;
             }
         }
 
@@ -98,6 +136,14 @@ namespace LanguageLearningApp.Services
         {
             try
             {
+                if (lesson == null)
+                    throw new ArgumentNullException(nameof(lesson), "Bài học không được null.");
+
+                if (string.IsNullOrEmpty(idToken))
+                    throw new ArgumentException("idToken không được để trống hoặc null.", nameof(idToken));
+
+                Console.WriteLine($"Đang tạo bài học với CourseId: {lesson.CourseId}, Tiêu đề: {lesson.Title}");
+
                 var json = JsonConvert.SerializeObject(lesson);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -105,20 +151,28 @@ namespace LanguageLearningApp.Services
                     $"{_firebaseConfig.DatabaseUrl}/lessons.json?auth={idToken}",
                     content);
 
-                if (response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
-
-                    if (result.ContainsKey("name"))
-                        return result["name"]; // Firebase generated key
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Không thể tạo bài học. Trạng thái: {response.StatusCode}, Lý do: {response.ReasonPhrase}, Nội dung: {errorContent}");
                 }
 
-                return null;
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+
+                if (result != null && result.ContainsKey("name"))
+                {
+                    var lessonId = result["name"];
+                    Console.WriteLine($"Bài học đã được tạo với ID: {lessonId}");
+                    return lessonId;
+                }
+
+                throw new Exception("Không thể phân tích ID bài học từ phản hồi Firebase.");
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                Console.WriteLine($"Lỗi trong CreateLessonAsync: {ex.Message}");
+                throw;
             }
         }
 
@@ -126,6 +180,12 @@ namespace LanguageLearningApp.Services
         {
             try
             {
+                if (lesson == null)
+                    throw new ArgumentNullException(nameof(lesson), "Bài học không được null.");
+
+                if (string.IsNullOrEmpty(idToken))
+                    throw new ArgumentException("idToken không được để trống hoặc null.", nameof(idToken));
+
                 var json = JsonConvert.SerializeObject(lesson);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -133,11 +193,18 @@ namespace LanguageLearningApp.Services
                     $"{_firebaseConfig.DatabaseUrl}/lessons/{lesson.LessonId}.json?auth={idToken}",
                     content);
 
-                return response.IsSuccessStatusCode;
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Không thể cập nhật bài học với ID {lesson.LessonId}. Trạng thái: {response.StatusCode}, Lý do: {response.ReasonPhrase}, Nội dung: {errorContent}");
+                }
+
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                Console.WriteLine($"Lỗi trong UpdateLessonAsync: {ex.Message}");
+                throw;
             }
         }
 
@@ -145,22 +212,38 @@ namespace LanguageLearningApp.Services
         {
             try
             {
-                // First delete all questions of this lesson
+                if (string.IsNullOrEmpty(lessonId))
+                    throw new ArgumentException("LessonId không được để trống hoặc null.", nameof(lessonId));
+
+                if (string.IsNullOrEmpty(idToken))
+                    throw new ArgumentException("idToken không được để trống hoặc null.", nameof(idToken));
+
+                // Xóa tất cả câu hỏi của bài học này trước
                 var questions = await _questionService.GetQuestionsByLessonIdAsync(lessonId, idToken);
-                foreach (var question in questions)
+                if (questions != null)
                 {
-                    await _questionService.DeleteQuestionAsync(question.QuestionId, idToken);
+                    foreach (var question in questions)
+                    {
+                        await _questionService.DeleteQuestionAsync(question.QuestionId, idToken);
+                    }
                 }
 
-                // Then delete the lesson
+                // Sau đó xóa bài học
                 var response = await _httpClient.DeleteAsync(
                     $"{_firebaseConfig.DatabaseUrl}/lessons/{lessonId}.json?auth={idToken}");
 
-                return response.IsSuccessStatusCode;
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Không thể xóa bài học với ID {lessonId}. Trạng thái: {response.StatusCode}, Lý do: {response.ReasonPhrase}, Nội dung: {errorContent}");
+                }
+
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                Console.WriteLine($"Lỗi trong DeleteLessonAsync: {ex.Message}");
+                throw;
             }
         }
 
@@ -168,41 +251,50 @@ namespace LanguageLearningApp.Services
         {
             try
             {
-                // Query questions by lessonId
+                if (string.IsNullOrEmpty(lessonId))
+                    throw new ArgumentException("LessonId không được để trống hoặc null.", nameof(lessonId));
+
+                if (string.IsNullOrEmpty(idToken))
+                    throw new ArgumentException("idToken không được để trống hoặc null.", nameof(idToken));
+
+                // Truy vấn câu hỏi theo lessonId
                 var response = await _httpClient.GetAsync(
                     $"{_firebaseConfig.DatabaseUrl}/questions.json?orderBy=\"lessonId\"&equalTo=\"{lessonId}\"&auth={idToken}");
 
-                if (response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var questionsDictionary = JsonConvert.DeserializeObject<Dictionary<string, QuestionModel>>(content);
-
-                    if (questionsDictionary == null)
-                        return new List<QuestionModel>();
-
-                    var questions = new List<QuestionModel>();
-                    foreach (var kvp in questionsDictionary)
-                    {
-                        var question = kvp.Value;
-                        question.QuestionId = kvp.Key;
-                        questions.Add(question);
-                    }
-
-                    // Sort questions by order
-                    questions.Sort((x, y) => x.Order.CompareTo(y.Order));
-
-                    return questions;
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Không thể lấy danh sách câu hỏi cho LessonId {lessonId}. Trạng thái: {response.StatusCode}, Lý do: {response.ReasonPhrase}, Nội dung: {errorContent}");
                 }
 
-                return new List<QuestionModel>();
+                var content = await response.Content.ReadAsStringAsync();
+                var questionsDictionary = JsonConvert.DeserializeObject<Dictionary<string, QuestionModel>>(content);
+
+                if (questionsDictionary == null || questionsDictionary.Count == 0)
+                {
+                    return new List<QuestionModel>();
+                }
+
+                var questions = new List<QuestionModel>();
+                foreach (var kvp in questionsDictionary)
+                {
+                    var question = kvp.Value;
+                    if (question == null)
+                        continue;
+
+                    question.QuestionId = kvp.Key;
+                    questions.Add(question);
+                }
+
+                // Sắp xếp câu hỏi theo thứ tự
+                questions.Sort((x, y) => x.Order.CompareTo(y.Order));
+                return questions;
             }
-            catch
+            catch (Exception ex)
             {
-                return new List<QuestionModel>();
+                Console.WriteLine($"Lỗi trong GetLessonQuestions: {ex.Message}");
+                throw;
             }
         }
-
     }
-
-
 }

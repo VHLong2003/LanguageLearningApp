@@ -50,7 +50,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             {
                 if (SetProperty(ref _lessonId, value) && !string.IsNullOrEmpty(value))
                 {
-                    // When lessonId is set via QueryProperty, load data
                     Task.Run(async () => await LoadLessonAndQuestionsAsync());
                 }
             }
@@ -81,7 +80,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             {
                 if (SetProperty(ref _selectedQuestion, value) && value != null)
                 {
-                    // Update form fields with selected question
                     QuestionId = value.QuestionId;
                     Content = value.Content;
                     ImageUrl = value.ImageUrl;
@@ -93,7 +91,6 @@ namespace LanguageLearningApp.ViewModels.Admin
                     Order = value.Order;
                     TimeLimit = value.TimeLimit;
 
-                    // Load options
                     Options.Clear();
                     if (value.Options != null)
                     {
@@ -157,7 +154,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             set => SetProperty(ref _newOption, value);
         }
 
-        // Form properties
         public string QuestionId
         {
             get => _questionId;
@@ -218,7 +214,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             set => SetProperty(ref _timeLimit, value);
         }
 
-        // Commands
         public ICommand RefreshCommand { get; }
         public ICommand CreateQuestionCommand { get; }
         public ICommand SaveQuestionCommand { get; }
@@ -242,8 +237,6 @@ namespace LanguageLearningApp.ViewModels.Admin
 
             Questions = new ObservableCollection<QuestionModel>();
             Options = new ObservableCollection<string>();
-
-            // Available question types
             QuestionTypes = new ObservableCollection<QuestionType>
             {
                 QuestionType.MultipleChoice,
@@ -265,10 +258,10 @@ namespace LanguageLearningApp.ViewModels.Admin
             RemoveOptionCommand = new Command<string>(RemoveOption);
             MoveUpCommand = new Command<QuestionModel>(async (question) => await MoveUpAsync(question));
             MoveDownCommand = new Command<QuestionModel>(async (question) => await MoveDownAsync(question));
-            BackToLessonsCommand = new Command(async () => await Shell.Current.GoToAsync($"../lessons?courseId={CourseId}"));
+            BackToLessonsCommand = new Command(async () => await Shell.Current.GoToAsync($"lessons?courseId={CourseId}"));
         }
 
-        private async Task LoadLessonAndQuestionsAsync()
+        public async Task LoadLessonAndQuestionsAsync()
         {
             IsLoading = true;
             ErrorMessage = string.Empty;
@@ -276,22 +269,22 @@ namespace LanguageLearningApp.ViewModels.Admin
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
 
-                // Load lesson details
                 CurrentLesson = await _lessonService.GetLessonByIdAsync(LessonId, idToken);
+                if (CurrentLesson == null)
+                {
+                    ErrorMessage = "Không tìm thấy bài học";
+                    return;
+                }
 
-                if (CurrentLesson != null)
-                {
-                    await LoadQuestionsAsync();
-                }
-                else
-                {
-                    ErrorMessage = "Lesson not found";
-                }
+                await LoadQuestionsAsync();
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error loading lesson: {ex.Message}";
+                ErrorMessage = $"Lỗi khi tải bài học: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
             }
             finally
             {
@@ -307,20 +300,24 @@ namespace LanguageLearningApp.ViewModels.Admin
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
+
                 var lessonQuestions = await _questionService.GetQuestionsByLessonIdAsync(LessonId, idToken);
+                if (lessonQuestions == null) lessonQuestions = new List<QuestionModel>();
 
-                // Sort questions by order
                 lessonQuestions.Sort((a, b) => a.Order.CompareTo(b.Order));
-
                 Questions.Clear();
                 foreach (var question in lessonQuestions)
                 {
                     Questions.Add(question);
+                    Console.WriteLine($"Đã thêm câu hỏi vào UI: {question.Content} (Thứ tự: {question.Order})");
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error loading questions: {ex.Message}";
+                ErrorMessage = $"Lỗi khi tải câu hỏi: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
             }
             finally
             {
@@ -330,24 +327,22 @@ namespace LanguageLearningApp.ViewModels.Admin
 
         private void CreateNewQuestion()
         {
-            // Clear form fields
             QuestionId = string.Empty;
             Content = string.Empty;
             ImageUrl = string.Empty;
             AudioUrl = string.Empty;
-            Type = QuestionType.MultipleChoice; // Default
+            Type = QuestionType.MultipleChoice;
             CorrectAnswer = string.Empty;
             Explanation = string.Empty;
-            Points = 10; // Default
-            Order = Questions.Count + 1; // Set order to next in sequence
-            TimeLimit = 30; // Default 30 seconds
+            Points = 10;
+            Order = Questions.Count + 1;
+            TimeLimit = 30;
 
-            // Clear options
             Options.Clear();
-            Options.Add("Option 1");
-            Options.Add("Option 2");
-            Options.Add("Option 3");
-            Options.Add("Option 4");
+            Options.Add("Lựa chọn 1");
+            Options.Add("Lựa chọn 2");
+            Options.Add("Lựa chọn 3");
+            Options.Add("Lựa chọn 4");
 
             IsNewQuestion = true;
             IsEditing = true;
@@ -359,25 +354,25 @@ namespace LanguageLearningApp.ViewModels.Admin
         {
             if (string.IsNullOrWhiteSpace(Content))
             {
-                ErrorMessage = "Question content is required";
+                ErrorMessage = "Nội dung câu hỏi là bắt buộc";
                 return;
             }
 
             if (Type == QuestionType.MultipleChoice && Options.Count < 2)
             {
-                ErrorMessage = "Multiple choice questions require at least 2 options";
+                ErrorMessage = "Câu hỏi trắc nghiệm cần ít nhất 2 lựa chọn";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(CorrectAnswer))
             {
-                ErrorMessage = "Correct answer is required";
+                ErrorMessage = "Đáp án đúng là bắt buộc";
                 return;
             }
 
             if (Points <= 0)
             {
-                ErrorMessage = "Points must be greater than 0";
+                ErrorMessage = "Điểm số phải lớn hơn 0";
                 return;
             }
 
@@ -387,10 +382,11 @@ namespace LanguageLearningApp.ViewModels.Admin
             try
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
+                if (string.IsNullOrEmpty(idToken))
+                    throw new InvalidOperationException("Người dùng chưa được xác thực. Vui lòng đăng nhập lại.");
 
                 if (IsNewQuestion)
                 {
-                    // Create new question
                     var newQuestion = new QuestionModel
                     {
                         LessonId = LessonId,
@@ -407,23 +403,21 @@ namespace LanguageLearningApp.ViewModels.Admin
                     };
 
                     var questionId = await _questionService.CreateQuestionAsync(newQuestion, idToken);
-
                     if (!string.IsNullOrEmpty(questionId))
                     {
                         newQuestion.QuestionId = questionId;
                         Questions.Add(newQuestion);
-
-                        // Reset form
+                        Console.WriteLine($"Đã tạo câu hỏi mới với ID: {questionId}");
                         CancelEdit();
                     }
                     else
                     {
-                        ErrorMessage = "Failed to create question";
+                        ErrorMessage = "Không thể tạo câu hỏi";
+                        await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
                     }
                 }
                 else
                 {
-                    // Update existing question
                     if (_selectedQuestion != null)
                     {
                         _selectedQuestion.Content = Content;
@@ -438,25 +432,24 @@ namespace LanguageLearningApp.ViewModels.Admin
                         _selectedQuestion.TimeLimit = TimeLimit;
 
                         var success = await _questionService.UpdateQuestionAsync(_selectedQuestion, idToken);
-
                         if (success)
                         {
-                            // Reset form
+                            Console.WriteLine($"Đã cập nhật câu hỏi: {_selectedQuestion.Content}");
                             CancelEdit();
-
-                            // Reload to ensure correct ordering
                             await LoadQuestionsAsync();
                         }
                         else
                         {
-                            ErrorMessage = "Failed to update question";
+                            ErrorMessage = "Không thể cập nhật câu hỏi";
+                            await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error saving question: {ex.Message}";
+                ErrorMessage = $"Lỗi khi lưu câu hỏi: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
             }
             finally
             {
@@ -470,7 +463,6 @@ namespace LanguageLearningApp.ViewModels.Admin
             IsNewQuestion = false;
             SelectedQuestion = null;
 
-            // Clear form fields
             QuestionId = string.Empty;
             Content = string.Empty;
             ImageUrl = string.Empty;
@@ -482,25 +474,21 @@ namespace LanguageLearningApp.ViewModels.Admin
             Order = 0;
             TimeLimit = 0;
 
-            // Clear options
             Options.Clear();
             NewOption = string.Empty;
-
             ErrorMessage = string.Empty;
         }
 
         private async Task DeleteQuestionAsync(QuestionModel question)
         {
-            if (question == null)
-                return;
+            if (question == null) return;
 
             var confirm = await App.Current.MainPage.DisplayAlert(
-                "Confirm Delete",
-                "Are you sure you want to delete this question?",
-                "Yes", "No");
+                "Xác nhận xóa",
+                "Bạn có chắc chắn muốn xóa câu hỏi này?",
+                "Có", "Không");
 
-            if (!confirm)
-                return;
+            if (!confirm) return;
 
             IsLoading = true;
 
@@ -512,24 +500,18 @@ namespace LanguageLearningApp.ViewModels.Admin
                 if (success)
                 {
                     Questions.Remove(question);
-
-                    // Reorder remaining questions
                     await ReorderQuestionsAsync();
-
-                    // If the deleted question was being edited, clear the form
-                    if (SelectedQuestion == question)
-                    {
-                        CancelEdit();
-                    }
+                    if (SelectedQuestion == question) CancelEdit();
+                    Console.WriteLine($"Đã xóa câu hỏi với ID: {question.QuestionId}");
                 }
                 else
                 {
-                    await App.Current.MainPage.DisplayAlert("Error", "Failed to delete question", "OK");
+                    await App.Current.MainPage.DisplayAlert("Lỗi", "Không thể xóa câu hỏi", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error deleting question: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi xóa câu hỏi: {ex.Message}", "OK");
             }
             finally
             {
@@ -541,17 +523,15 @@ namespace LanguageLearningApp.ViewModels.Admin
         {
             try
             {
-                // Use MAUI file picker
                 var result = await FilePicker.PickAsync(new PickOptions
                 {
                     FileTypes = FilePickerFileType.Images,
-                    PickerTitle = "Select Question Image"
+                    PickerTitle = "Chọn ảnh cho câu hỏi"
                 });
 
                 if (result != null)
                 {
                     IsLoading = true;
-
                     var idToken = LocalStorageHelper.GetItem("idToken");
                     var imageUrl = await _storageService.UploadImageFromPickerAsync(result, "question_images", idToken);
 
@@ -561,105 +541,81 @@ namespace LanguageLearningApp.ViewModels.Admin
                     }
                     else
                     {
-                        await App.Current.MainPage.DisplayAlert("Error", "Failed to upload image", "OK");
+                        await App.Current.MainPage.DisplayAlert("Lỗi", "Không thể tải ảnh lên", "OK");
                     }
-
                     IsLoading = false;
                 }
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error picking image: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi chọn ảnh: {ex.Message}", "OK");
             }
         }
 
         private void AddOption()
         {
-            if (string.IsNullOrWhiteSpace(NewOption))
-                return;
-
+            if (string.IsNullOrWhiteSpace(NewOption)) return;
             Options.Add(NewOption);
             NewOption = string.Empty;
         }
 
         private void RemoveOption(string option)
         {
-            if (string.IsNullOrWhiteSpace(option))
-                return;
-
+            if (string.IsNullOrWhiteSpace(option)) return;
             Options.Remove(option);
-
-            // If the correct answer was this option, clear it
-            if (CorrectAnswer == option)
-                CorrectAnswer = string.Empty;
+            if (CorrectAnswer == option) CorrectAnswer = string.Empty;
         }
 
         private async Task MoveUpAsync(QuestionModel question)
         {
-            if (question == null)
-                return;
-
+            if (question == null) return;
             var index = Questions.IndexOf(question);
+            if (index <= 0) return;
 
-            // Can't move up if already first
-            if (index <= 0)
-                return;
-
-            // Swap with previous question
             var previousQuestion = Questions[index - 1];
-
-            // Swap order values
             int tempOrder = question.Order;
             question.Order = previousQuestion.Order;
             previousQuestion.Order = tempOrder;
 
-            // Update questions in database
             var idToken = LocalStorageHelper.GetItem("idToken");
             await _questionService.UpdateQuestionAsync(question, idToken);
             await _questionService.UpdateQuestionAsync(previousQuestion, idToken);
-
-            // Reload questions to refresh order
             await LoadQuestionsAsync();
         }
 
         private async Task MoveDownAsync(QuestionModel question)
         {
-            if (question == null)
-                return;
-
+            if (question == null) return;
             var index = Questions.IndexOf(question);
+            if (index >= Questions.Count - 1) return;
 
-            // Can't move down if already last
-            if (index >= Questions.Count - 1)
-                return;
-
-            // Swap with next question
             var nextQuestion = Questions[index + 1];
-
-            // Swap order values
             int tempOrder = question.Order;
             question.Order = nextQuestion.Order;
             nextQuestion.Order = tempOrder;
 
-            // Update questions in database
             var idToken = LocalStorageHelper.GetItem("idToken");
             await _questionService.UpdateQuestionAsync(question, idToken);
             await _questionService.UpdateQuestionAsync(nextQuestion, idToken);
-
-            // Reload questions to refresh order
             await LoadQuestionsAsync();
         }
 
         private async Task ReorderQuestionsAsync()
         {
-            // Reorder remaining questions
-            var idToken = LocalStorageHelper.GetItem("idToken");
-
-            for (int i = 0; i < Questions.Count; i++)
+            try
             {
-                var question = Questions[i];
-                question.Order = i + 1;
-                await _questionService.UpdateQuestionAsync(question, idToken);
+                var idToken = LocalStorageHelper.GetItem("idToken");
+                for (int i = 0; i < Questions.Count; i++)
+                {
+                    var question = Questions[i];
+                    question.Order = i + 1;
+                    await _questionService.UpdateQuestionAsync(question, idToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Lỗi khi sắp xếp lại câu hỏi: {ex.Message}";
+                await App.Current.MainPage.DisplayAlert("Lỗi", ErrorMessage, "OK");
             }
         }
     }
