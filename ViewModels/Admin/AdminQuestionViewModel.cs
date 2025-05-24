@@ -258,7 +258,7 @@ namespace LanguageLearningApp.ViewModels.Admin
             RemoveOptionCommand = new Command<string>(RemoveOption);
             MoveUpCommand = new Command<QuestionModel>(async (question) => await MoveUpAsync(question));
             MoveDownCommand = new Command<QuestionModel>(async (question) => await MoveDownAsync(question));
-            BackToLessonsCommand = new Command(async () => await Shell.Current.GoToAsync($"lessons?courseId={CourseId}"));
+            BackToLessonsCommand = new Command(async () => await Shell.Current.GoToAsync($"lessonManagement?courseId={CourseId}"));
         }
 
         public async Task LoadLessonAndQuestionsAsync()

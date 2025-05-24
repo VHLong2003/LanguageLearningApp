@@ -1,78 +1,110 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="LanguageLearningApp.Views.Admin.QuestionsManagementPage"
-             x:Name="ThisPage"
-             Title="Quản lý câu hỏi">
+<ContentPage 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="LanguageLearningApp.Views.Admin.QuestionsManagementPage"
+    x:Name="ThisPage"
+    Title="Quản lý Câu hỏi"
+    BackgroundColor="#f8fafc">
 
-    <ScrollView>
-        <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
-            <StackLayout Spacing="16" Padding="16">
-                <Label Text="QUẢN LÝ CÂU HỎI" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center"/>
-                <Label Text="{Binding CurrentLesson.Title}" FontSize="18" FontAttributes="Bold" TextColor="#0284C7" HorizontalOptions="Center"/>
-                <Button Text="+ Tạo câu hỏi mới" Command="{Binding CreateQuestionCommand}" BackgroundColor="#2563EB" TextColor="White" CornerRadius="8" />
-                <CollectionView ItemsSource="{Binding Questions}" SelectedItem="{Binding SelectedQuestion, Mode=TwoWay}">
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Spacing="16" Padding="10,16">
+                <Label Text="QUẢN LÝ CÂU HỎI" FontSize="22" FontAttributes="Bold" TextColor="#27272A" HorizontalOptions="Center" Margin="0,0,0,8"/>
+
+                <!-- Thông tin bài học hiện tại -->
+                <Frame CornerRadius="10" BackgroundColor="#e0e7ef" Padding="8" Margin="0,0,0,8">
+                    <StackLayout Spacing="2">
+                        <Label Text="{Binding CurrentLesson.Title}" FontSize="16" FontAttributes="Bold" TextColor="#2563eb" />
+                        <Label Text="{Binding CurrentLesson.Description}" FontSize="13" TextColor="#64748b" LineBreakMode="WordWrap" MaxLines="2"/>
+                        <Label Text="Số câu hỏi: {Binding Questions.Count}" FontSize="11" TextColor="#6b7280"/>
+                    </StackLayout>
+                </Frame>
+
+                <Button Text="+ Thêm câu hỏi mới" Command="{Binding CreateQuestionCommand}" BackgroundColor="#2563eb" TextColor="White" CornerRadius="14" FontAttributes="Bold" FontSize="16" HeightRequest="44"/>
+
+                <!-- Danh sách câu hỏi -->
+                <CollectionView ItemsSource="{Binding Questions}" SelectionMode="Single" SelectedItem="{Binding SelectedQuestion, Mode=TwoWay}" Margin="0,8,0,0">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical"/>
+                    </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Frame Margin="0,8" Padding="10" CornerRadius="14" HasShadow="True" BackgroundColor="#F0F9FF">
-                                <StackLayout Orientation="Horizontal" Spacing="10" VerticalOptions="Center">
-                                    <Image Source="{Binding ImageUrl}" HeightRequest="48" WidthRequest="48" Aspect="AspectFill" />
-                                    <StackLayout VerticalOptions="Center" Spacing="4" WidthRequest="160">
-                                        <Label Text="{Binding Content}" FontAttributes="Bold" FontSize="15" />
-                                        <Label Text="{Binding Type}" FontSize="12" TextColor="#0284C7" />
+                            <Frame CornerRadius="10" Padding="0" Margin="0,8" HasShadow="True" BorderColor="#e0e7ef" BackgroundColor="White" HeightRequest="120">
+                                <Grid ColumnDefinitions="85,*,auto">
+                                    <!-- Ảnh câu hỏi -->
+                                    <Frame Padding="0" CornerRadius="8" HasShadow="False" IsClippedToBounds="True" Grid.Column="0" WidthRequest="75" HeightRequest="75" VerticalOptions="Center" HorizontalOptions="Center">
+                                        <Image Source="{Binding ImageUrl}" WidthRequest="75" HeightRequest="75" Aspect="AspectFill"/>
+                                    </Frame>
+                                    <StackLayout Grid.Column="1" Padding="8,8" Spacing="2">
+                                        <Label Text="{Binding Content}" FontSize="14" FontAttributes="Bold" TextColor="#1e293b" LineBreakMode="WordWrap"/>
+                                        <HorizontalStackLayout Spacing="8">
+                                            <Label FontSize="12" TextColor="#0ea5e9"
+                                                Text="{Binding Type, Converter={StaticResource QuestionTypeToVietnameseConverter}}" />
+                                            <Label FontSize="11" TextColor="#6366f1"
+                                                Text="{Binding Points, StringFormat='Điểm: {0}'}" />
+                                            <Label FontSize="11" TextColor="#6ee7b7"
+                                                Text="{Binding Order, StringFormat='Thứ tự: {0}'}" />
+                                        </HorizontalStackLayout>
                                     </StackLayout>
-                                    <StackLayout HorizontalOptions="EndAndExpand" Orientation="Horizontal" Spacing="6">
-                                        <Button Text="▲" Command="{Binding BindingContext.MoveUpCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
-                                        <Button Text="▼" Command="{Binding BindingContext.MoveDownCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
-                                        <Button Text="Xóa" Command="{Binding BindingContext.DeleteQuestionCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" TextColor="Red" />
-                                    </StackLayout>
-                                </StackLayout>
+                                    <VerticalStackLayout Grid.Column="2" Padding="2,14,4,0" Spacing="6" VerticalOptions="Start">
+                                        <Button Text="Sửa" Command="{Binding BindingContext.CreateQuestionCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="11" BackgroundColor="#f1f5f9" TextColor="#2563eb" CornerRadius="6" HeightRequest="30"/>
+                                        <Button Text="Xoá" Command="{Binding BindingContext.DeleteQuestionCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="11" BackgroundColor="#fee2e2" TextColor="#dc2626" CornerRadius="6" HeightRequest="30"/>
+                                    </VerticalStackLayout>
+                                </Grid>
                             </Frame>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
-                <!-- Biểu mẫu chỉnh sửa/tạo câu hỏi -->
-                <Frame Padding="16" CornerRadius="16" BackgroundColor="#CFFAFE" IsVisible="{Binding IsEditing}">
-                    <ScrollView>
-                        <StackLayout Spacing="10">
-                            <Entry Placeholder="Nội dung câu hỏi" Text="{Binding Content}"/>
-                            <Picker Title="Loại câu hỏi" ItemsSource="{Binding QuestionTypes}" SelectedItem="{Binding Type}"/>
-                            <Entry Placeholder="Điểm số" Text="{Binding Points}" Keyboard="Numeric"/>
-                            <Entry Placeholder="Thứ tự" Text="{Binding Order}" Keyboard="Numeric"/>
-                            <Entry Placeholder="Thời gian giới hạn (giây)" Text="{Binding TimeLimit}" Keyboard="Numeric"/>
-                            <Entry Placeholder="Giải thích (tuỳ chọn)" Text="{Binding Explanation}"/>
-                            <Image Source="{Binding ImageUrl}" HeightRequest="64" Aspect="AspectFill"/>
-                            <Button Text="Chọn ảnh cho câu hỏi" Command="{Binding PickImageCommand}"/>
-                            <Entry Placeholder="Audio URL (nếu có)" Text="{Binding AudioUrl}"/>
-                            <Entry Placeholder="Đáp án đúng" Text="{Binding CorrectAnswer}"/>
-                            <!-- MultipleChoice Options -->
-                            <StackLayout IsVisible="{Binding Type, Converter={StaticResource QuestionTypeIsMultipleChoiceConverter}}">
-                                <Label Text="Tuỳ chọn câu trả lời:"/>
-                                <CollectionView ItemsSource="{Binding Options}">
-                                    <CollectionView.ItemTemplate>
-                                        <DataTemplate>
-                                            <StackLayout Orientation="Horizontal" Spacing="6">
-                                                <Label Text="{Binding .}"/>
-                                                <Button Text="X" Command="{Binding BindingContext.RemoveOptionCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" TextColor="Red"/>
-                                            </StackLayout>
-                                        </DataTemplate>
-                                    </CollectionView.ItemTemplate>
-                                </CollectionView>
-                                <StackLayout Orientation="Horizontal" Spacing="8">
-                                    <Entry Placeholder="Tuỳ chọn mới" Text="{Binding NewOption}" WidthRequest="150"/>
-                                    <Button Text="Thêm" Command="{Binding AddOptionCommand}"/>
-                                </StackLayout>
-                            </StackLayout>
-                            <StackLayout Orientation="Horizontal" HorizontalOptions="EndAndExpand" Spacing="10">
-                                <Button Text="Lưu" Command="{Binding SaveQuestionCommand}" BackgroundColor="#22C55E" TextColor="White" />
-                                <Button Text="Hủy" Command="{Binding CancelEditCommand}" BackgroundColor="#EF4444" TextColor="White" />
-                            </StackLayout>
+
+                <!-- FORM tạo/sửa câu hỏi -->
+                <Frame Padding="12" CornerRadius="14" BackgroundColor="#f1f5f9" Margin="0,12,0,0" IsVisible="{Binding IsEditing}" HasShadow="True">
+                    <VerticalStackLayout Spacing="12">
+                        <Entry Placeholder="Nội dung câu hỏi" Text="{Binding Content}" FontSize="15"/>
+                        <Picker 
+                            Title="Loại câu hỏi" 
+                            ItemsSource="{Binding QuestionTypes}" 
+                            SelectedItem="{Binding Type, Mode=TwoWay}"
+                            ItemDisplayBinding="{Binding ., Converter={StaticResource QuestionTypeToVietnameseConverter}}"/>
+
+                        <!-- Chỉ hiển thị nếu là câu hỏi trắc nghiệm -->
+                        <StackLayout IsVisible="{Binding Type, Converter={StaticResource MultipleChoiceVisibilityConverter}}">
+                            <Label Text="Danh sách lựa chọn:" FontSize="13"/>
+                            <CollectionView ItemsSource="{Binding Options}" HeightRequest="80">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackLayout Orientation="Horizontal" Spacing="6">
+                                            <Label Text="{Binding .}" FontSize="12"/>
+                                            <Button Text="X" Command="{Binding BindingContext.RemoveOptionCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="10" BackgroundColor="#fee2e2" TextColor="#dc2626" HeightRequest="24" WidthRequest="24" CornerRadius="12"/>
+                                        </StackLayout>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                            <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                <Entry Placeholder="Thêm lựa chọn mới" Text="{Binding NewOption}" FontSize="12"/>
+                                <Button Text="+" Command="{Binding AddOptionCommand}" FontSize="12" BackgroundColor="#f1f5f9" TextColor="#2563eb" HeightRequest="32" WidthRequest="32" CornerRadius="16"/>
+                            </HorizontalStackLayout>
                         </StackLayout>
-                    </ScrollView>
+
+                        <Entry Placeholder="Đáp án đúng" Text="{Binding CorrectAnswer}" FontSize="13"/>
+                        <Editor Placeholder="Giải thích (nếu có)" Text="{Binding Explanation}" FontSize="12" AutoSize="TextChanges" HeightRequest="40"/>
+                        <Entry Placeholder="Điểm số" Text="{Binding Points, Mode=TwoWay, Converter={StaticResource StringToIntConverter}}" Keyboard="Numeric" WidthRequest="80"/>
+                        <Entry Placeholder="Thứ tự" Text="{Binding Order, Mode=TwoWay, Converter={StaticResource StringToIntConverter}}" Keyboard="Numeric" WidthRequest="80"/>
+                        <Entry Placeholder="Thời gian giới hạn (giây)" Text="{Binding TimeLimit, Mode=TwoWay, Converter={StaticResource StringToIntConverter}}" Keyboard="Numeric" WidthRequest="120"/>
+                        <Frame Padding="0" CornerRadius="8" HasShadow="False" IsClippedToBounds="True" HeightRequest="65" VerticalOptions="Center" HorizontalOptions="Center">
+                            <Image Source="{Binding ImageUrl}" HeightRequest="65" Aspect="AspectFill"/>
+                        </Frame>
+                        <Button Text="Chọn hình ảnh" Command="{Binding PickImageCommand}" FontSize="13"/>
+                        <HorizontalStackLayout HorizontalOptions="End" Spacing="8">
+                            <Button Text="Lưu" Command="{Binding SaveQuestionCommand}" BackgroundColor="#22c55e" TextColor="White" CornerRadius="8" FontSize="13"/>
+                            <Button Text="Huỷ" Command="{Binding CancelEditCommand}" BackgroundColor="#f87171" TextColor="White" CornerRadius="8" FontSize="13"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
                 </Frame>
-                <Label Text="{Binding ErrorMessage}" TextColor="Red" FontAttributes="Italic" IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
-                <Button Text="← Quay lại bài học" Command="{Binding BackToLessonsCommand}" HorizontalOptions="Start"/>
-            </StackLayout>
-        </RefreshView>
-    </ScrollView>
+
+                <Label Text="{Binding ErrorMessage}" TextColor="#dc2626" FontAttributes="Italic" FontSize="12" IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}" Margin="0,8,0,0"/>
+                <Button Text="← Quay lại bài học" Command="{Binding BackToLessonsCommand}" BackgroundColor="#f3f4f6" TextColor="#2563eb" CornerRadius="12" FontSize="13" Margin="0,10,0,0"/>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
 </ContentPage>

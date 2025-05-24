@@ -33,7 +33,7 @@ namespace LanguageLearningApp.Models
         public CourseType Type { get; set; }
 
         [JsonProperty("difficultyLevel")]
-        public int DifficultyLevel { get; set; } // 1-5, where 5 is most difficult
+        public int DifficultyLevel { get; set; } 
 
         [JsonProperty("requiredPoints")]
         public int RequiredPointsToUnlock { get; set; }

@@ -49,10 +49,15 @@
             <converters:NotCurrentUserConverter x:Key="NotCurrentUserConverter"/>
             <converters:ItemTypeToVietnameseConverter x:Key="ItemTypeToVietnameseConverter"/>
             <converters:QuestionTypeToDisplayNameConverter x:Key="QuestionTypeToDisplayNameConverter" />
+            <converters:StringNotNullOrEmptyConverter x:Key="StringNotNullOrEmptyConverter" />
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
             <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
             <converters:StringEqualityConverter x:Key="StringEqualityConverter" />
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+            <converters:StringToIntConverter x:Key="StringToIntConverter"/>
+            <converters:QuestionTypeToVietnameseConverter x:Key="QuestionTypeToVietnameseConverter"/>
+            <converters:MultipleChoiceVisibilityConverter x:Key="MultipleChoiceVisibilityConverter"/>
+
 
 
             <!-- Styles -->

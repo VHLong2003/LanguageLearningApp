@@ -1,57 +1,116 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="LanguageLearningApp.Views.Admin.LessonsManagementPage"
-             x:Name="ThisPage"
-             Title="Quản lý bài học">
-
+<ContentPage 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="LanguageLearningApp.Views.Admin.LessonsManagementPage"
+    x:Name="ThisPage"
+    Title="Quản lý Bài học">
     <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
-        <StackLayout Spacing="16" Padding="16">
-            <Label Text="QUẢN LÝ BÀI HỌC" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center"/>
-            <Label Text="{Binding CurrentCourse.Title}" FontSize="18" FontAttributes="Bold" TextColor="#6366F1" HorizontalOptions="Center"/>
-            <Button Text="+ Tạo bài học mới" Command="{Binding CreateLessonCommand}" BackgroundColor="#6366F1" TextColor="White" CornerRadius="8" />
-            <CollectionView ItemsSource="{Binding Lessons}" SelectedItem="{Binding SelectedLesson, Mode=TwoWay}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Frame Margin="0,8" Padding="10" CornerRadius="14" HasShadow="True" BackgroundColor="#F1F5F9">
-                            <StackLayout Orientation="Horizontal" Spacing="10" VerticalOptions="Center">
-                                <Image Source="{Binding ImageUrl}" HeightRequest="56" WidthRequest="56" Aspect="AspectFill" />
-                                <StackLayout VerticalOptions="Center" Spacing="4" WidthRequest="160">
-                                    <Label Text="{Binding Title}" FontAttributes="Bold" FontSize="16" />
-                                    <Label Text="{Binding Description}" FontSize="13" TextColor="#64748B" LineBreakMode="TailTruncation" MaxLines="2" />
-                                </StackLayout>
-                                <StackLayout HorizontalOptions="EndAndExpand" Orientation="Horizontal" Spacing="6">
-                                    <Button Text="Câu hỏi" Command="{Binding BindingContext.ManageQuestionsCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
-                                    <Button Text="▲" Command="{Binding BindingContext.MoveUpCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
-                                    <Button Text="▼" Command="{Binding BindingContext.MoveDownCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" />
-                                    <Button Text="Xóa" Command="{Binding BindingContext.DeleteLessonCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" TextColor="Red" />
-                                </StackLayout>
-                            </StackLayout>
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-            <!-- Biểu mẫu chỉnh sửa/tạo bài học -->
-            <Frame Padding="16" CornerRadius="16" BackgroundColor="#DBEAFE" IsVisible="{Binding IsEditing}">
-                <StackLayout Spacing="10">
-                    <Entry Placeholder="Tiêu đề bài học" Text="{Binding Title}"/>
-                    <Editor Placeholder="Mô tả bài học" Text="{Binding Description}" AutoSize="TextChanges" HeightRequest="50"/>
-                    <Editor Placeholder="Nội dung bài học" Text="{Binding Content}" AutoSize="TextChanges" HeightRequest="80"/>
-                    <Entry Placeholder="Thứ tự" Text="{Binding Order}" Keyboard="Numeric"/>
-                    <Entry Placeholder="Điểm yêu cầu để mở khóa" Text="{Binding RequiredPoints}" Keyboard="Numeric"/>
-                    <Entry Placeholder="Điểm tối đa" Text="{Binding MaxPoints}" Keyboard="Numeric"/>
-                    <Entry Placeholder="Thời gian ước tính (phút)" Text="{Binding EstimatedMinutes}" Keyboard="Numeric"/>
-                    <Image Source="{Binding ImageUrl}" HeightRequest="80" Aspect="AspectFill"/>
-                    <Button Text="Chọn hình ảnh" Command="{Binding PickImageCommand}"/>
-                    <Entry Placeholder="Video URL (YouTube/Vimeo)" Text="{Binding VideoUrl}"/>
-                    <StackLayout Orientation="Horizontal" HorizontalOptions="EndAndExpand" Spacing="10">
-                        <Button Text="Lưu" Command="{Binding SaveLessonCommand}" BackgroundColor="#22C55E" TextColor="White" />
-                        <Button Text="Hủy" Command="{Binding CancelEditCommand}" BackgroundColor="#EF4444" TextColor="White" />
+        <ScrollView>
+            <VerticalStackLayout Spacing="16" Padding="10,16">
+                <Label Text="QUẢN LÝ BÀI HỌC" FontSize="22" FontAttributes="Bold" TextColor="#27272A" HorizontalOptions="Center" Margin="0,0,0,8"/>
+                <!-- Thông tin khoá học hiện tại -->
+                <Frame CornerRadius="10" BackgroundColor="#f1f5f9" Padding="8" Margin="0,0,0,8">
+                    <StackLayout Spacing="2">
+                        <Label Text="{Binding CurrentCourse.Title}" FontSize="16" FontAttributes="Bold" TextColor="#2563eb" />
+                        <Label Text="{Binding CurrentCourse.Description}" FontSize="13" TextColor="#475569" LineBreakMode="WordWrap" MaxLines="2"/>
+                        <Label FontSize="11" TextColor="#6b7280">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="Số bài học: " />
+                                    <Span Text="{Binding CurrentCourse.TotalLessons}" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+
                     </StackLayout>
-                </StackLayout>
-            </Frame>
-            <Label Text="{Binding ErrorMessage}" TextColor="Red" FontAttributes="Italic" IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
-            <Button Text="← Quay lại khóa học" Command="{Binding BackToCoursesCommand}" HorizontalOptions="Start"/>
-        </StackLayout>
+                </Frame>
+                <Button Text="+ Thêm bài học mới" Command="{Binding CreateLessonCommand}" BackgroundColor="#2563eb" TextColor="White" CornerRadius="14" FontAttributes="Bold" FontSize="16" HeightRequest="44"/>
+                <!-- Danh sách bài học -->
+                <CollectionView ItemsSource="{Binding Lessons}" SelectionMode="Single" SelectedItem="{Binding SelectedLesson, Mode=TwoWay}" Margin="0,8,0,0">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical"/>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame CornerRadius="10" Padding="0" Margin="0,8" HasShadow="True" BorderColor="#e0e7ef" BackgroundColor="White" HeightRequest="110">
+                                <Grid ColumnDefinitions="85,*,auto">
+                                    <!-- Ảnh bài học -->
+                                    <Frame Padding="0" CornerRadius="8" HasShadow="False" IsClippedToBounds="True" Grid.Column="0" WidthRequest="75" HeightRequest="75" VerticalOptions="Center" HorizontalOptions="Center">
+                                        <Image Source="{Binding ImageUrl}" WidthRequest="75" HeightRequest="75" Aspect="AspectFill"/>
+                                    </Frame>
+                                    <StackLayout Grid.Column="1" Padding="8,8" Spacing="2">
+                                        <Label Text="{Binding Title}" FontSize="15" FontAttributes="Bold" TextColor="#1e293b"/>
+                                        <Label Text="{Binding Description}" FontSize="12" TextColor="#64748b" LineBreakMode="WordWrap" MaxLines="2"/>
+                                        <HorizontalStackLayout Spacing="8">
+                                            <Frame Padding="4,0" CornerRadius="6" BackgroundColor="#fef9c3" HasShadow="False" VerticalOptions="Center">
+                                                <Label FontSize="11" TextColor="#f59e42">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="Thứ tự: "/>
+                                                            <Span Text="{Binding Order}" />
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+
+                                            </Frame>
+                                            <Frame Padding="4,0" CornerRadius="6" BackgroundColor="#dbeafe" HasShadow="False" VerticalOptions="Center">
+                                                <Label FontSize="11" TextColor="#0ea5e9">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="Điểm mở: "/>
+                                                            <Span Text="{Binding RequiredPointsToUnlock}" />
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+
+                                            </Frame>
+                                            <Frame Padding="4,0" CornerRadius="6" BackgroundColor="#bbf7d0" HasShadow="False" VerticalOptions="Center">
+                                                <Label Text="{Binding EstimatedMinutes, StringFormat='{}{0} Phút'}" 
+                                                       FontSize="11" 
+                                                       TextColor="#16a34a"/>
+
+                                            </Frame>
+                                        </HorizontalStackLayout>
+                                    </StackLayout>
+                                    <VerticalStackLayout Grid.Column="2" Padding="2,14,4,0" Spacing="6" VerticalOptions="Start">
+                                        <Button Text="Sửa" Command="{Binding BindingContext.CreateLessonCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="11" BackgroundColor="#f1f5f9" TextColor="#2563eb" CornerRadius="6" HeightRequest="30"/>
+                                        <Button Text="Xoá" Command="{Binding BindingContext.DeleteLessonCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="11" BackgroundColor="#fee2e2" TextColor="#dc2626" CornerRadius="6" HeightRequest="30"/>
+                                        <Button Text="Câu hỏi" Command="{Binding BindingContext.ManageQuestionsCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="11" BackgroundColor="#e0e7ef" TextColor="#0ea5e9" CornerRadius="6" HeightRequest="30"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                <!-- FORM tạo/sửa bài học -->
+                <Frame Padding="12" CornerRadius="14" BackgroundColor="#f8fafc" Margin="0,12,0,0" IsVisible="{Binding IsEditing}" HasShadow="True">
+                    <VerticalStackLayout Spacing="12">
+                        <Entry Placeholder="Tiêu đề bài học" Text="{Binding Title}" FontSize="15"/>
+                        <Editor Placeholder="Mô tả ngắn" Text="{Binding Description}" FontSize="12" AutoSize="TextChanges" HeightRequest="40"/>
+                        <Editor Placeholder="Nội dung chi tiết" Text="{Binding Content}" FontSize="13" AutoSize="TextChanges" HeightRequest="70"/>
+                        <Entry Placeholder="Video URL (nếu có)" Text="{Binding VideoUrl}" FontSize="12"/>
+                        <HorizontalStackLayout Spacing="8">
+                            <Entry Placeholder="Thứ tự" Text="{Binding Order, Mode=TwoWay}" Keyboard="Numeric" WidthRequest="70"/>
+                            <Entry Placeholder="Điểm mở khoá" Text="{Binding RequiredPoints, Mode=TwoWay}" Keyboard="Numeric" WidthRequest="90"/>
+                        </HorizontalStackLayout>
+                        <HorizontalStackLayout Spacing="8">
+                            <Entry Placeholder="Điểm tối đa" Text="{Binding MaxPoints, Mode=TwoWay}" Keyboard="Numeric" WidthRequest="90"/>
+                            <Entry Placeholder="Thời gian (phút)" Text="{Binding EstimatedMinutes, Mode=TwoWay}" Keyboard="Numeric" WidthRequest="110"/>
+                        </HorizontalStackLayout>
+                        <Frame Padding="0" CornerRadius="8" HasShadow="False" IsClippedToBounds="True" HeightRequest="65" VerticalOptions="Center" HorizontalOptions="Center">
+                            <Image Source="{Binding ImageUrl}" HeightRequest="65" Aspect="AspectFill"/>
+                        </Frame>
+                        <Button Text="Chọn hình ảnh" Command="{Binding PickImageCommand}" FontSize="13"/>
+                        <HorizontalStackLayout HorizontalOptions="End" Spacing="8">
+                            <Button Text="Lưu" Command="{Binding SaveLessonCommand}" BackgroundColor="#22c55e" TextColor="White" CornerRadius="8" FontSize="13"/>
+                            <Button Text="Huỷ" Command="{Binding CancelEditCommand}" BackgroundColor="#f87171" TextColor="White" CornerRadius="8" FontSize="13"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Frame>
+                <Label Text="{Binding ErrorMessage}" TextColor="#dc2626" FontAttributes="Italic" FontSize="12" IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}" Margin="0,8,0,0"/>
+                <Button Text="← Quay lại khoá học" Command="{Binding BackToCoursesCommand}" BackgroundColor="#f3f4f6" TextColor="#2563eb" CornerRadius="12" FontSize="13" Margin="0,10,0,0"/>
+            </VerticalStackLayout>
+        </ScrollView>
     </RefreshView>
 </ContentPage>
