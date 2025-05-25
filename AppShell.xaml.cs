@@ -22,6 +22,7 @@ namespace LanguageLearningApp
 
             // Register routes for admin pages
             Routing.RegisterRoute("userProgress", typeof(UserProgressPage)); 
+            Routing.RegisterRoute("coursesManagement", typeof(CoursesManagementPage));
             Routing.RegisterRoute("lessonManagement", typeof(LessonsManagementPage)); 
             Routing.RegisterRoute("questionManagement", typeof(QuestionsManagementPage)); 
             Routing.RegisterRoute("badgeManagement", typeof(BadgeManagementPage)); 

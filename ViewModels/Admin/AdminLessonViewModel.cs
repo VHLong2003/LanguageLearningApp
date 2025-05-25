@@ -736,7 +736,7 @@ namespace LanguageLearningApp.ViewModels.Admin
         {
             try
             {
-                await Shell.Current.GoToAsync("..");
+                await Shell.Current.GoToAsync("coursesManagement");
             }
             catch (Exception ex)
             {
