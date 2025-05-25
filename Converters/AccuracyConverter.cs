@@ -8,18 +8,17 @@ namespace LanguageLearningApp.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is int correct && parameter is int total && total > 0)
-            {
-                double percentage = (double)correct / total * 100;
-                return $"{percentage:F1}%";
-            }
+            int correct = 0, total = 0;
+            if (value is int c) correct = c;
 
-            return "0%";
-        }
+            // parameter truyền vào là tổng số câu
+            if (parameter is int t) total = t;
+            else if (parameter is string s && int.TryParse(s, out int st)) total = st;
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
+            if (total == 0) return "0%";
+            double percent = (double)correct / total * 100;
+            return $"{percent:0.#}%";
         }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 }

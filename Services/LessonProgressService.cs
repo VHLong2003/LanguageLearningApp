@@ -264,5 +264,45 @@ namespace LanguageLearningApp.Services
                 return 0;
             }
         }
+        public async Task<bool> UpdateLessonProgressAsync(LessonProgressModel progress, string idToken)
+        {
+            try
+            {
+                if (progress == null)
+                    throw new ArgumentNullException(nameof(progress), "Tiến trình bài học không được null.");
+
+                if (string.IsNullOrEmpty(progress.UserId))
+                    throw new ArgumentException("UserId không được để trống hoặc null.", nameof(progress.UserId));
+
+                if (string.IsNullOrEmpty(progress.LessonId))
+                    throw new ArgumentException("LessonId không được để trống hoặc null.", nameof(progress.LessonId));
+
+                if (string.IsNullOrEmpty(idToken))
+                    throw new ArgumentException("idToken không được để trống hoặc null.", nameof(idToken));
+
+                Console.WriteLine($"Đang cập nhật tiến trình bài học cho UserId: {progress.UserId}, LessonId: {progress.LessonId}");
+
+                var json = JsonConvert.SerializeObject(progress);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync(
+                    $"{_firebaseConfig.DatabaseUrl}/lessonProgress/{progress.UserId}/{progress.LessonId}.json?auth={idToken}",
+                    content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Không thể cập nhật tiến trình bài học. Trạng thái: {response.StatusCode}, Lý do: {response.ReasonPhrase}, Nội dung: {errorContent}");
+                }
+
+                Console.WriteLine($"Tiến trình bài học đã được cập nhật: {json}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi trong UpdateLessonProgressAsync: {ex.Message}");
+                throw;
+            }
+        }
     }
 }

@@ -94,7 +94,7 @@ namespace LanguageLearningApp.ViewModels.User
             ShopItems = new ObservableCollection<ShopItemModel>();
             UserItems = new ObservableCollection<ShopItemModel>();
 
-            // Initialize categories
+            // Khởi tạo danh mục
             Categories = new ObservableCollection<ItemType>
             {
                 ItemType.Avatar,
@@ -127,7 +127,7 @@ namespace LanguageLearningApp.ViewModels.User
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var userId = LocalStorageHelper.GetItem("userId");
 
-                // Get current user data
+                // Lấy dữ liệu người dùng hiện tại
                 _currentUser = await _userService.GetUserByIdAsync(userId, idToken);
 
                 if (_currentUser != null)
@@ -135,16 +135,16 @@ namespace LanguageLearningApp.ViewModels.User
                     UserCoins = _currentUser.Coins;
                 }
 
-                // Load shop items
+                // Tải các mặt hàng trong cửa hàng
                 var items = await _shopService.GetAllShopItemsAsync(idToken);
 
                 ShopItems.Clear();
                 foreach (var item in items)
                 {
-                    // Check if user already owns this item
+                    // Kiểm tra xem người dùng đã sở hữu mặt hàng này chưa
                     if (_currentUser?.PurchasedItemIds == null || !_currentUser.PurchasedItemIds.Contains(item.ItemId))
                     {
-                        // Only show items the user doesn't own yet and that are available
+                        // Chỉ hiển thị các mặt hàng người dùng chưa sở hữu và còn có sẵn
                         if (!item.IsLimited || item.AvailableQuantity > 0)
                         {
                             ShopItems.Add(item);
@@ -152,7 +152,7 @@ namespace LanguageLearningApp.ViewModels.User
                     }
                 }
 
-                // Load user items
+                // Tải các mặt hàng của người dùng
                 var userItems = await _shopService.GetUserPurchasedItemsAsync(userId, idToken);
 
                 UserItems.Clear();
@@ -163,7 +163,7 @@ namespace LanguageLearningApp.ViewModels.User
             }
             catch (System.Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Failed to load shop: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể tải cửa hàng: {ex.Message}", "OK");
             }
             finally
             {
@@ -185,19 +185,19 @@ namespace LanguageLearningApp.ViewModels.User
                 {
                     var items = await _shopService.GetItemsByTypeAsync(SelectedCategory, idToken);
 
-                    // Filter out items the user already owns
+                    // Lọc ra các mặt hàng người dùng chưa sở hữu
                     if (_currentUser?.PurchasedItemIds != null)
                     {
                         items = items.FindAll(i => !_currentUser.PurchasedItemIds.Contains(i.ItemId));
                     }
 
-                    // Update on UI thread
+                    // Cập nhật trên luồng giao diện
                     Device.BeginInvokeOnMainThread(() =>
                     {
                         ShopItems.Clear();
                         foreach (var item in items)
                         {
-                            // Only show available items
+                            // Chỉ hiển thị các mặt hàng có sẵn
                             if (!item.IsLimited || item.AvailableQuantity > 0)
                             {
                                 ShopItems.Add(item);
@@ -223,23 +223,23 @@ namespace LanguageLearningApp.ViewModels.User
 
             try
             {
-                // Check if user has enough coins
+                // Kiểm tra xem người dùng có đủ xu không
                 if (_currentUser.Coins < item.Price)
                 {
-                    await App.Current.MainPage.DisplayAlert("Purchase Failed",
-                        $"You don't have enough coins. You need {item.Price} coins, but you only have {_currentUser.Coins} coins.",
+                    await App.Current.MainPage.DisplayAlert("Mua thất bại",
+                        $"Bạn không có đủ xu. Bạn cần {item.Price} xu, nhưng bạn chỉ có {_currentUser.Coins} xu.",
                         "OK");
                     return;
                 }
 
-                // Confirm purchase
-                var confirm = await App.Current.MainPage.DisplayAlert("Confirm Purchase",
-                    $"Are you sure you want to purchase {item.Title} for {item.Price} coins?",
-                    "Yes", "No");
+                // Xác nhận mua
+                var confirm = await App.Current.MainPage.DisplayAlert("Xác nhận mua",
+                    $"Bạn có chắc muốn mua {item.Title} với giá {item.Price} xu không?",
+                    "Có", "Không");
 
                 if (!confirm) return;
 
-                // Process the purchase
+                // Xử lý giao dịch mua
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var userId = LocalStorageHelper.GetItem("userId");
 
@@ -247,28 +247,28 @@ namespace LanguageLearningApp.ViewModels.User
 
                 if (success)
                 {
-                    // Update UI
+                    // Cập nhật giao diện
                     _currentUser.Coins -= item.Price;
                     UserCoins = _currentUser.Coins;
 
-                    // Refresh shop
+                    // Làm mới cửa hàng
                     await LoadShopAsync();
 
-                    await App.Current.MainPage.DisplayAlert("Purchase Successful",
-                        $"You have purchased {item.Title}!",
+                    await App.Current.MainPage.DisplayAlert("Mua thành công",
+                        $"Bạn đã mua {item.Title}!",
                         "OK");
                 }
                 else
                 {
-                    await App.Current.MainPage.DisplayAlert("Purchase Failed",
-                        "There was an error processing your purchase. Please try again.",
+                    await App.Current.MainPage.DisplayAlert("Mua thất bại",
+                        "Đã xảy ra lỗi khi xử lý giao dịch của bạn. Vui lòng thử lại.",
                         "OK");
                 }
             }
             catch (System.Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error",
-                    $"An error occurred: {ex.Message}",
+                await App.Current.MainPage.DisplayAlert("Lỗi",
+                    $"Đã xảy ra lỗi: {ex.Message}",
                     "OK");
             }
         }
@@ -279,47 +279,47 @@ namespace LanguageLearningApp.ViewModels.User
 
             try
             {
-                // Handle item usage based on type
+                // Xử lý việc sử dụng mặt hàng dựa trên loại
                 switch (item.Type)
                 {
                     case ItemType.Avatar:
-                        // Update user's avatar
+                        // Cập nhật ảnh đại diện của người dùng
                         _currentUser.AvatarUrl = item.IconUrl;
 
                         var idToken = LocalStorageHelper.GetItem("idToken");
                         await _userService.UpdateUserAsync(_currentUser, idToken);
 
-                        await App.Current.MainPage.DisplayAlert("Avatar Updated",
-                            $"Your avatar has been updated to {item.Title}!",
+                        await App.Current.MainPage.DisplayAlert("Cập nhật ảnh đại diện",
+                            $"Ảnh đại diện của bạn đã được cập nhật thành {item.Title}!",
                             "OK");
                         break;
 
                     case ItemType.Theme:
-                        // Apply theme
-                        // This would require a theme service and application of themes
-                        await App.Current.MainPage.DisplayAlert("Theme Applied",
-                            $"Theme {item.Title} has been applied!",
+                        // Áp dụng chủ đề
+                        // Điều này sẽ yêu cầu một dịch vụ chủ đề và áp dụng các chủ đề
+                        await App.Current.MainPage.DisplayAlert("Áp dụng chủ đề",
+                            $"Chủ đề {item.Title} đã được áp dụng!",
                             "OK");
                         break;
 
                     case ItemType.PowerUp:
-                        // Apply power-up effect
-                        await App.Current.MainPage.DisplayAlert("Power-Up Activated",
-                            $"{item.Title} has been activated! {item.EffectDescription}",
+                        // Áp dụng hiệu ứng tăng cường
+                        await App.Current.MainPage.DisplayAlert("Kích hoạt tăng cường",
+                            $"{item.Title} đã được kích hoạt! {item.EffectDescription}",
                             "OK");
                         break;
 
                     default:
-                        await App.Current.MainPage.DisplayAlert("Item Used",
-                            $"You've used {item.Title}!",
+                        await App.Current.MainPage.DisplayAlert("Sử dụng mặt hàng",
+                            $"Bạn đã sử dụng {item.Title}!",
                             "OK");
                         break;
                 }
             }
             catch (System.Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error",
-                    $"An error occurred: {ex.Message}",
+                await App.Current.MainPage.DisplayAlert("Lỗi",
+                    $"Đã xảy ra lỗi: {ex.Message}",
                     "OK");
             }
         }

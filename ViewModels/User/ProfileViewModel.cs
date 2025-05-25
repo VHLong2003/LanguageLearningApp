@@ -27,7 +27,7 @@ namespace LanguageLearningApp.ViewModels.User
         private bool _isViewingOtherUser;
         private string _viewedUserId;
 
-        // Edit profile fields
+        // Các trường chỉnh sửa hồ sơ
         private string _fullName;
         private string _email;
         private string _avatarUrl;
@@ -83,7 +83,7 @@ namespace LanguageLearningApp.ViewModels.User
             set => SetProperty(ref _isViewingOtherUser, value);
         }
 
-        // Edit profile properties
+        // Các thuộc tính chỉnh sửa hồ sơ
         public string FullName
         {
             get => _fullName;
@@ -120,7 +120,7 @@ namespace LanguageLearningApp.ViewModels.User
             set => SetProperty(ref _confirmPassword, value);
         }
 
-        // Commands
+        // Các lệnh
         public ICommand RefreshCommand { get; }
         public ICommand EditProfileCommand { get; }
         public ICommand SaveProfileCommand { get; }
@@ -173,17 +173,17 @@ namespace LanguageLearningApp.ViewModels.User
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var currentUserId = LocalStorageHelper.GetItem("userId");
 
-                // Determine which user to load
+                // Xác định người dùng cần tải
                 string userIdToLoad = IsViewingOtherUser ? _viewedUserId : currentUserId;
 
-                // Load user data
+                // Tải dữ liệu người dùng
                 var user = await _userService.GetUserByIdAsync(userIdToLoad, idToken);
 
                 if (user != null)
                 {
                     User = user;
 
-                    // Update form fields if this is the current user
+                    // Cập nhật các trường biểu mẫu nếu đây là người dùng hiện tại
                     if (!IsViewingOtherUser)
                     {
                         FullName = user.FullName;
@@ -191,7 +191,7 @@ namespace LanguageLearningApp.ViewModels.User
                         AvatarUrl = user.AvatarUrl;
                     }
 
-                    // Load badges
+                    // Tải huy hiệu
                     var userBadges = await _badgeService.GetUserBadgesAsync(userIdToLoad, idToken);
 
                     Badges.Clear();
@@ -200,10 +200,10 @@ namespace LanguageLearningApp.ViewModels.User
                         Badges.Add(badge);
                     }
 
-                    // Load recent progress
+                    // Tải tiến trình gần đây
                     var allProgress = await _progressService.GetUserProgressAsync(userIdToLoad, idToken);
 
-                    // Sort by completion date (most recent first) and take top 5
+                    // Sắp xếp theo ngày hoàn thành (gần đây nhất trước) và lấy 5 mục đầu tiên
                     allProgress.Sort((a, b) => b.CompletedDate.CompareTo(a.CompletedDate));
                     var recentItems = allProgress.Count > 5 ? allProgress.GetRange(0, 5) : allProgress;
 
@@ -215,12 +215,12 @@ namespace LanguageLearningApp.ViewModels.User
                 }
                 else
                 {
-                    StatusMessage = "Failed to load user data";
+                    StatusMessage = "Không thể tải dữ liệu người dùng";
                 }
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error: {ex.Message}";
+                StatusMessage = $"Lỗi: {ex.Message}";
             }
             finally
             {
@@ -231,13 +231,13 @@ namespace LanguageLearningApp.ViewModels.User
 
         private void StartEditProfile()
         {
-            // Only allow editing if viewing own profile
+            // Chỉ cho phép chỉnh sửa nếu đang xem hồ sơ của chính mình
             if (IsViewingOtherUser)
                 return;
 
             IsEditing = true;
 
-            // Clear password fields
+            // Xóa các trường mật khẩu
             OldPassword = string.Empty;
             NewPassword = string.Empty;
             ConfirmPassword = string.Empty;
@@ -245,39 +245,39 @@ namespace LanguageLearningApp.ViewModels.User
 
         private async Task SaveProfileAsync()
         {
-            // Only allow saving if viewing own profile
+            // Chỉ cho phép lưu nếu đang xem hồ sơ của chính mình
             if (IsViewingOtherUser)
                 return;
 
-            // Validate inputs
+            // Kiểm tra đầu vào
             if (string.IsNullOrWhiteSpace(FullName))
             {
-                StatusMessage = "Please enter your full name";
+                StatusMessage = "Vui lòng nhập họ tên đầy đủ";
                 return;
             }
 
-            // Validate password if changing
+            // Kiểm tra mật khẩu nếu thay đổi
             if (!string.IsNullOrWhiteSpace(NewPassword))
             {
                 if (string.IsNullOrWhiteSpace(OldPassword))
                 {
-                    StatusMessage = "Please enter your current password";
+                    StatusMessage = "Vui lòng nhập mật khẩu hiện tại";
                     return;
                 }
 
                 if (NewPassword != ConfirmPassword)
                 {
-                    StatusMessage = "New passwords don't match";
+                    StatusMessage = "Mật khẩu mới không khớp";
                     return;
                 }
 
                 if (!ValidationHelper.IsValidPassword(NewPassword))
                 {
-                    StatusMessage = "New password must be at least 6 characters";
+                    StatusMessage = "Mật khẩu mới phải có ít nhất 6 ký tự";
                     return;
                 }
 
-                // TODO: Implement password change through Firebase Auth
+                // TODO: Triển khai thay đổi mật khẩu qua Firebase Auth
             }
 
             IsLoading = true;
@@ -287,7 +287,7 @@ namespace LanguageLearningApp.ViewModels.User
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
 
-                // Update user data
+                // Cập nhật dữ liệu người dùng
                 User.FullName = FullName;
                 User.AvatarUrl = AvatarUrl;
 
@@ -296,16 +296,16 @@ namespace LanguageLearningApp.ViewModels.User
                 if (success)
                 {
                     IsEditing = false;
-                    StatusMessage = "Profile updated successfully";
+                    StatusMessage = "Cập nhật hồ sơ thành công";
                 }
                 else
                 {
-                    StatusMessage = "Failed to update profile";
+                    StatusMessage = "Không thể cập nhật hồ sơ";
                 }
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error: {ex.Message}";
+                StatusMessage = $"Lỗi: {ex.Message}";
             }
             finally
             {
@@ -317,12 +317,12 @@ namespace LanguageLearningApp.ViewModels.User
         {
             IsEditing = false;
 
-            // Reset form fields to current values
+            // Đặt lại các trường biểu mẫu về giá trị hiện tại
             FullName = User.FullName;
             Email = User.Email;
             AvatarUrl = User.AvatarUrl;
 
-            // Clear password fields
+            // Xóa các trường mật khẩu
             OldPassword = string.Empty;
             NewPassword = string.Empty;
             ConfirmPassword = string.Empty;
@@ -334,11 +334,11 @@ namespace LanguageLearningApp.ViewModels.User
         {
             try
             {
-                // Use MAUI file picker
+                // Sử dụng bộ chọn tệp MAUI
                 var result = await FilePicker.PickAsync(new PickOptions
                 {
                     FileTypes = FilePickerFileType.Images,
-                    PickerTitle = "Select Profile Picture"
+                    PickerTitle = "Chọn ảnh hồ sơ"
                 });
 
                 if (result != null)
@@ -348,17 +348,17 @@ namespace LanguageLearningApp.ViewModels.User
                     var idToken = LocalStorageHelper.GetItem("idToken");
                     var userId = LocalStorageHelper.GetItem("userId");
 
-                    // Upload image
+                    // Tải ảnh lên
                     var imageUrl = await _storageService.UploadImageFromPickerAsync(result, "avatars", idToken);
 
                     if (!string.IsNullOrEmpty(imageUrl))
                     {
-                        // Update avatar URL
+                        // Cập nhật URL ảnh đại diện
                         AvatarUrl = imageUrl;
                     }
                     else
                     {
-                        await App.Current.MainPage.DisplayAlert("Error", "Failed to upload image", "OK");
+                        await App.Current.MainPage.DisplayAlert("Lỗi", "Không thể tải ảnh lên", "OK");
                     }
 
                     IsLoading = false;
@@ -366,16 +366,16 @@ namespace LanguageLearningApp.ViewModels.User
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error selecting image: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi chọn ảnh: {ex.Message}", "OK");
             }
         }
 
         private async Task LogoutAsync()
         {
             var confirm = await App.Current.MainPage.DisplayAlert(
-                "Confirm Logout",
-                "Are you sure you want to log out?",
-                "Yes", "No");
+                "Xác nhận đăng xuất",
+                "Bạn có chắc muốn đăng xuất không?",
+                "Có", "Không");
 
             if (!confirm)
                 return;
@@ -388,13 +388,13 @@ namespace LanguageLearningApp.ViewModels.User
 
                 if (success)
                 {
-                    // Navigate to login
+                    // Chuyển đến trang đăng nhập
                     await Shell.Current.GoToAsync("//login");
                 }
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error logging out: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi đăng xuất: {ex.Message}", "OK");
             }
             finally
             {
@@ -404,7 +404,7 @@ namespace LanguageLearningApp.ViewModels.User
 
         private async Task AddFriendAsync()
         {
-            // Only allow adding friend when viewing other user
+            // Chỉ cho phép thêm bạn khi đang xem hồ sơ của người khác
             if (!IsViewingOtherUser || string.IsNullOrEmpty(_viewedUserId))
                 return;
 
@@ -415,22 +415,22 @@ namespace LanguageLearningApp.ViewModels.User
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var currentUserId = LocalStorageHelper.GetItem("userId");
 
-                // Add friend (bidirectional relationship)
+                // Thêm bạn (quan hệ hai chiều)
                 var addToCurrentUser = await _userService.AddFriendAsync(currentUserId, _viewedUserId, idToken);
                 var addToOtherUser = await _userService.AddFriendAsync(_viewedUserId, currentUserId, idToken);
 
                 if (addToCurrentUser && addToOtherUser)
                 {
-                    await App.Current.MainPage.DisplayAlert("Success", "Friend added successfully", "OK");
+                    await App.Current.MainPage.DisplayAlert("Thành công", "Thêm bạn thành công", "OK");
                 }
                 else
                 {
-                    await App.Current.MainPage.DisplayAlert("Error", "Failed to add friend", "OK");
+                    await App.Current.MainPage.DisplayAlert("Lỗi", "Không thể thêm bạn", "OK");
                 }
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error adding friend: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi thêm bạn: {ex.Message}", "OK");
             }
             finally
             {

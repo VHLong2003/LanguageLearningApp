@@ -4,137 +4,215 @@
              xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.User"
              xmlns:models="clr-namespace:LanguageLearningApp.Models"
              x:Class="LanguageLearningApp.Views.User.HomeUserPage"
-             Title="Trang chủ">
+             Title="Trang chủ"
+             BackgroundColor="#F5F7FA">
 
+    <ContentPage.Resources>
+        <!-- Define modern color palette and styles -->
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#4A90E2</Color>
+            <Color x:Key="SecondaryColor">#50C878</Color>
+            <Color x:Key="AccentColor">#FF6B6B</Color>
+            <Color x:Key="BackgroundColor">#F5F7FA</Color>
+            <Color x:Key="CardBackgroundColor">White</Color>
+            <Color x:Key="TextPrimaryColor">#2D3436</Color>
+            <Color x:Key="TextSecondaryColor">#636E72</Color>
+
+            <!-- Button Style -->
+            <Style TargetType="Button" x:Key="PrimaryButtonStyle">
+                <Setter Property="BackgroundColor" Value="{StaticResource PrimaryColor}" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="15,10" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="VisualStateManager.VisualStateGroups">
+                    <VisualStateGroupList>
+                        <VisualStateGroup x:Name="CommonStates">
+                            <VisualState x:Name="Normal">
+                                <VisualState.Setters>
+                                    <Setter Property="Scale" Value="1.0" />
+                                </VisualState.Setters>
+                            </VisualState>
+                            <VisualState x:Name="Pressed">
+                                <VisualState.Setters>
+                                    <Setter Property="Scale" Value="0.95" />
+                                    <Setter Property="BackgroundColor" Value="#357ABD" />
+                                </VisualState.Setters>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateGroupList>
+                </Setter>
+            </Style>
+
+            <!-- Frame Style -->
+            <Style TargetType="Frame">
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="15" />
+                <Setter Property="HasShadow" Value="True" />
+                <Setter Property="BackgroundColor" Value="{StaticResource CardBackgroundColor}" />
+                <Setter Property="BorderColor" Value="#E8ECEF" />
+            </Style>
+
+            <!-- Label Style -->
+            <Style TargetType="Label" x:Key="SectionHeader">
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="TextColor" Value="{StaticResource TextPrimaryColor}" />
+                <Setter Property="Margin" Value="0,0,0,10" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <RefreshView IsRefreshing="{Binding IsRefreshing}"
                  Command="{Binding RefreshCommand}">
         <ScrollView>
-            <StackLayout Spacing="20"
-                         Padding="20">
+            <StackLayout Spacing="25"
+                         Padding="20,30,20,20"
+                         BackgroundColor="{StaticResource BackgroundColor}">
 
-                <!-- Khu vực chào mừng -->
-                <Frame CornerRadius="10"
-                       Padding="15"
-                       BorderColor="#3498db"
-                       HasShadow="True">
-                    <StackLayout Spacing="10">
+                <!-- Welcome Section -->
+                <Frame>
+                    <StackLayout Spacing="12">
                         <Label Text="{Binding WelcomeMessage}"
-                               FontSize="20"
-                               FontAttributes="Bold" />
-                        <Label Text="{Binding DailyMotivation}" />
+                               Style="{StaticResource SectionHeader}"
+                               FontSize="24" />
+                        <Label Text="{Binding DailyMotivation}"
+                               TextColor="{StaticResource TextSecondaryColor}"
+                               FontSize="16" />
 
                         <Grid ColumnDefinitions="Auto,*,Auto"
-                              RowDefinitions="Auto,Auto">
+                              RowDefinitions="Auto,Auto"
+                              ColumnSpacing="10"
+                              RowSpacing="8">
                             <Label Text="Chuỗi ngày học liên tục:"
                                    Grid.Column="0"
-                                   Grid.Row="0" />
+                                   Grid.Row="0"
+                                   TextColor="{StaticResource TextSecondaryColor}" />
                             <Label Text="{Binding CurrentStreak, StringFormat='{0} ngày'}"
                                    FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimaryColor}"
                                    Grid.Column="1"
                                    Grid.Row="0" />
-
                             <Image Source="streak.png"
-                                   HeightRequest="20"
-                                   WidthRequest="20"
+                                   HeightRequest="24"
+                                   WidthRequest="24"
                                    Grid.Column="2"
                                    Grid.Row="0" />
 
                             <Label Text="Tổng điểm:"
                                    Grid.Column="0"
-                                   Grid.Row="1" />
+                                   Grid.Row="1"
+                                   TextColor="{StaticResource TextSecondaryColor}" />
                             <Label Text="{Binding TotalPoints}"
                                    FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimaryColor}"
                                    Grid.Column="1"
                                    Grid.Row="1" />
-
                             <Image Source="points.png"
-                                   HeightRequest="20"
-                                   WidthRequest="20"
+                                   HeightRequest="24"
+                                   WidthRequest="24"
                                    Grid.Column="2"
                                    Grid.Row="1" />
                         </Grid>
 
-                        <!-- Tiến độ mục tiêu ngày -->
-                        <StackLayout Spacing="5" Margin="0,10,0,0">
-                            <Label Text="Tiến độ mục tiêu ngày" FontAttributes="Bold" />
-                            <ProgressBar Progress="{Binding DailyGoalProgress}" />
+                        <!-- Daily Goal Progress -->
+                        <StackLayout Spacing="8" Margin="0,15,0,0">
+                            <Label Text="Tiến độ mục tiêu ngày"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimaryColor}" />
+                            <ProgressBar Progress="{Binding DailyGoalProgress}"
+                                         ProgressColor="{StaticResource SecondaryColor}"
+                                         HeightRequest="10"
+                                         BackgroundColor="#E8ECEF" />
                             <Label Text="{Binding DailyGoalMessage}"
-                                   HorizontalOptions="Center" />
+                                   TextColor="{StaticResource TextSecondaryColor}"
+                                   HorizontalOptions="Center"
+                                   FontSize="14" />
                         </StackLayout>
                     </StackLayout>
                 </Frame>
 
-                <!-- Tiếp tục học -->
-                <StackLayout Spacing="10"
-                           IsVisible="{Binding HasCurrentCourse}">
+                <!-- Continue Learning -->
+                <StackLayout Spacing="15"
+                             IsVisible="{Binding HasCurrentCourse}">
                     <Label Text="Tiếp tục học"
-                           FontSize="18"
-                           FontAttributes="Bold" />
+                           Style="{StaticResource SectionHeader}" />
 
-                    <Frame Padding="0"
-                           HasShadow="True"
-                           CornerRadius="10">
-                        <Grid RowDefinitions="100"
-                              ColumnDefinitions="120,*">
+                    <Frame>
+                        <Grid RowDefinitions="120"
+                              ColumnDefinitions="140,*"
+                              ColumnSpacing="10">
                             <Image Source="{Binding CurrentCourse.ImageUrl, TargetNullValue='default_course.png'}"
                                    Aspect="AspectFill"
-                                   Grid.Column="0" />
+                                   Grid.Column="0"
+                                   />
 
                             <StackLayout Grid.Column="1"
-                                      Padding="10"
-                                      VerticalOptions="Center">
+                                         Padding="15"
+                                         VerticalOptions="Center">
                                 <Label Text="{Binding CurrentCourse.Title}"
-                                       FontAttributes="Bold" />
-                                <Label Text="{Binding CurrentLessonTitle}" />
-                                <ProgressBar Progress="{Binding CourseProgress}" />
-                                <Label Text="{Binding CourseProgressText}" />
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimaryColor}"
+                                       FontSize="16" />
+                                <Label Text="{Binding CurrentLessonTitle}"
+                                       TextColor="{StaticResource TextSecondaryColor}"
+                                       FontSize="14" />
+                                <ProgressBar Progress="{Binding CourseProgress}"
+                                             ProgressColor="{StaticResource PrimaryColor}"
+                                             HeightRequest="8"
+                                             BackgroundColor="#E8ECEF"
+                                             Margin="0,5,0,5" />
+                                <Label Text="{Binding CourseProgressText}"
+                                       TextColor="{StaticResource TextSecondaryColor}"
+                                       FontSize="12" />
                             </StackLayout>
 
                             <Button Text="Tiếp tục"
+                                    Style="{StaticResource PrimaryButtonStyle}"
                                     Command="{Binding ContinueLearningCommand}"
                                     Grid.Column="1"
                                     HorizontalOptions="End"
                                     VerticalOptions="End"
-                                    Margin="0,0,10,10" />
+                                    Margin="0,0,15,15" />
                         </Grid>
                     </Frame>
                 </StackLayout>
 
-                <!-- Khoá học đề xuất -->
-                <StackLayout Spacing="10">
+                <!-- Recommended Courses -->
+                <StackLayout Spacing="15">
                     <Label Text="Khoá học đề xuất"
-                           FontSize="18"
-                           FontAttributes="Bold" />
+                           Style="{StaticResource SectionHeader}" />
 
                     <CollectionView ItemsSource="{Binding RecommendedCourses}"
-                                  HeightRequest="180"
-                                  SelectionMode="Single"
-                                  SelectionChanged="OnCourseSelected">
+                                    HeightRequest="200"
+                                    SelectionMode="Single"
+                                    SelectionChanged="OnCourseSelected">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Horizontal"
-                                               ItemSpacing="10" />
+                                               ItemSpacing="15" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="models:CourseModel">
-                                <Frame WidthRequest="150"
-                                       Padding="0"
-                                       HasShadow="True"
-                                       CornerRadius="10">
-                                    <Grid RowDefinitions="100,*">
+                                <Frame WidthRequest="160"
+                                       Padding="0">
+                                    <Grid RowDefinitions="120,*">
                                         <Image Source="{Binding ImageUrl, TargetNullValue='default_course.png'}"
                                                Aspect="AspectFill"
-                                               Grid.Row="0" />
-
+                                               Grid.Row="0"
+                                                />
                                         <StackLayout Grid.Row="1"
-                                                    Padding="10">
+                                                     Padding="10">
                                             <Label Text="{Binding Title}"
                                                    FontAttributes="Bold"
-                                                   MaxLines="1" />
+                                                   TextColor="{StaticResource TextPrimaryColor}"
+                                                   FontSize="14"
+                                                   MaxLines="1"
+                                                   LineBreakMode="TailTruncation" />
                                             <Label Text="{Binding Type, StringFormat='Loại: {0}'}"
                                                    FontSize="12"
-                                                   TextColor="Gray" />
+                                                   TextColor="{StaticResource TextSecondaryColor}" />
                                         </StackLayout>
                                     </Grid>
                                 </Frame>
@@ -145,40 +223,41 @@
                             <StackLayout HorizontalOptions="Center"
                                          VerticalOptions="Center">
                                 <Label Text="Không có khoá học đề xuất nào"
-                                       TextColor="Gray" />
+                                       TextColor="{StaticResource TextSecondaryColor}"
+                                       FontSize="14" />
                             </StackLayout>
                         </CollectionView.EmptyView>
                     </CollectionView>
                 </StackLayout>
 
-                <!-- Bảng xếp hạng -->
-                <StackLayout Spacing="10">
+                <!-- Leaderboard -->
+                <StackLayout Spacing="15">
                     <Label Text="Bảng xếp hạng"
-                           FontSize="18"
-                           FontAttributes="Bold" />
+                           Style="{StaticResource SectionHeader}" />
 
-                    <Frame Padding="10"
-                           HasShadow="True"
-                           CornerRadius="10">
-                        <StackLayout Spacing="10">
+                    <Frame>
+                        <StackLayout Spacing="12">
                             <Label Text="Top học viên trong tuần"
-                                   FontAttributes="Bold" />
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimaryColor}" />
 
                             <CollectionView ItemsSource="{Binding TopLeaderboard}"
-                                            HeightRequest="150">
+                                            HeightRequest="160">
                                 <CollectionView.ItemTemplate>
                                     <DataTemplate x:DataType="models:LeaderboardModel">
                                         <Grid ColumnDefinitions="Auto,Auto,*,Auto"
-                                              Padding="5">
+                                              Padding="8"
+                                              ColumnSpacing="10">
                                             <Label Text="{Binding Rank}"
                                                    FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextPrimaryColor}"
                                                    VerticalOptions="Center"
                                                    Grid.Column="0" />
 
-                                            <Frame Grid.Column="1" 
-                                                   CornerRadius="15"
-                                                   HeightRequest="30"
-                                                   WidthRequest="30" 
+                                            <Frame Grid.Column="1"
+                                                   CornerRadius="20"
+                                                   HeightRequest="40"
+                                                   WidthRequest="40"
                                                    Padding="0"
                                                    IsClippedToBounds="True"
                                                    Margin="5,0,10,0">
@@ -187,17 +266,20 @@
                                             </Frame>
 
                                             <Label Text="{Binding UserName}"
+                                                   TextColor="{StaticResource TextPrimaryColor}"
                                                    VerticalOptions="Center"
                                                    Grid.Column="2" />
 
                                             <StackLayout Grid.Column="3"
-                                                         Orientation="Horizontal">
+                                                         Orientation="Horizontal"
+                                                         VerticalOptions="Center">
                                                 <Label Text="{Binding TotalPoints}"
                                                        FontAttributes="Bold"
+                                                       TextColor="{StaticResource TextPrimaryColor}"
                                                        VerticalOptions="Center" />
                                                 <Image Source="points.png"
-                                                       HeightRequest="15"
-                                                       WidthRequest="15"
+                                                       HeightRequest="18"
+                                                       WidthRequest="18"
                                                        VerticalOptions="Center"
                                                        Margin="5,0,0,0" />
                                             </StackLayout>
@@ -207,48 +289,47 @@
 
                                 <CollectionView.EmptyView>
                                     <Label Text="Chưa có dữ liệu bảng xếp hạng"
-                                           TextColor="Gray"
-                                           HorizontalOptions="Center" />
+                                           TextColor="{StaticResource TextSecondaryColor}"
+                                           HorizontalOptions="Center"
+                                           FontSize="14" />
                                 </CollectionView.EmptyView>
                             </CollectionView>
 
                             <Button Text="Xem bảng xếp hạng đầy đủ"
-                                    Command="{Binding ViewLeaderboardCommand}"
-                                    BackgroundColor="#3498db"
-                                    TextColor="White" />
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Command="{Binding ViewLeaderboardCommand}" />
                         </StackLayout>
                     </Frame>
                 </StackLayout>
 
-                <!-- Thành tích gần đây -->
-                <StackLayout Spacing="10"
+                <!-- Recent Badges -->
+                <StackLayout Spacing="15"
                              IsVisible="{Binding HasRecentBadges}">
                     <Label Text="Thành tích gần đây"
-                           FontSize="18"
-                           FontAttributes="Bold" />
+                           Style="{StaticResource SectionHeader}" />
 
                     <CollectionView ItemsSource="{Binding RecentBadges}"
-                                    HeightRequest="110">
+                                    HeightRequest="120">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Horizontal"
-                                               ItemSpacing="10" />
+                                               ItemSpacing="15" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="models:BadgeModel">
                                 <Frame CornerRadius="50"
-                                       WidthRequest="80"
-                                       HeightRequest="80"
-                                       Padding="5"
-                                       HasShadow="True"
+                                       WidthRequest="90"
+                                       HeightRequest="90"
+                                       Padding="8"
                                        BorderColor="{Binding Tier, Converter={StaticResource BadgeTierToColorConverter}}">
                                     <StackLayout>
                                         <Image Source="{Binding IconUrl, TargetNullValue='default_badge.png'}"
-                                               HeightRequest="50"
-                                               WidthRequest="50"
+                                               HeightRequest="60"
+                                               WidthRequest="60"
                                                HorizontalOptions="Center" />
                                         <Label Text="{Binding Title}"
-                                               FontSize="10"
+                                               FontSize="11"
+                                               TextColor="{StaticResource TextPrimaryColor}"
                                                LineBreakMode="NoWrap"
                                                HorizontalOptions="Center" />
                                     </StackLayout>

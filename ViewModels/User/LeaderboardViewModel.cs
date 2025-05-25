@@ -114,7 +114,7 @@ namespace LanguageLearningApp.ViewModels.User
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var userId = LocalStorageHelper.GetItem("userId");
 
-                // Load global leaderboard
+                // Tải bảng xếp hạng toàn cầu
                 var globalEntries = await _leaderboardService.GetGlobalLeaderboardAsync(idToken);
 
                 GlobalLeaderboard.Clear();
@@ -122,14 +122,14 @@ namespace LanguageLearningApp.ViewModels.User
                 {
                     GlobalLeaderboard.Add(entry);
 
-                    // If this is the current user, save their rank
+                    // Nếu đây là người dùng hiện tại, lưu thứ hạng của họ
                     if (entry.UserId == userId)
                     {
                         CurrentUserRank = entry;
                     }
                 }
 
-                // Load friends leaderboard
+                // Tải bảng xếp hạng bạn bè
                 var friendsEntries = await _leaderboardService.GetFriendsLeaderboardAsync(userId, idToken);
 
                 FriendsLeaderboard.Clear();
@@ -138,7 +138,7 @@ namespace LanguageLearningApp.ViewModels.User
                     FriendsLeaderboard.Add(entry);
                 }
 
-                // Load weekly leaderboard
+                // Tải bảng xếp hạng hàng tuần
                 var weeklyEntries = await _leaderboardService.GetWeeklyLeaderboardAsync(idToken);
 
                 WeeklyLeaderboard.Clear();
@@ -149,7 +149,7 @@ namespace LanguageLearningApp.ViewModels.User
             }
             catch (System.Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Failed to load leaderboard: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể tải bảng xếp hạng: {ex.Message}", "OK");
             }
             finally
             {
@@ -164,17 +164,17 @@ namespace LanguageLearningApp.ViewModels.User
 
             var query = SearchQuery.ToLower();
 
-            // Clone current data
+            // Sao chép dữ liệu hiện tại
             var originalGlobal = new List<LeaderboardModel>(GlobalLeaderboard);
             var originalFriends = new List<LeaderboardModel>(FriendsLeaderboard);
             var originalWeekly = new List<LeaderboardModel>(WeeklyLeaderboard);
 
-            // Filter by username
+            // Lọc theo tên người dùng
             var filteredGlobal = originalGlobal.Where(e => e.UserName.ToLower().Contains(query)).ToList();
             var filteredFriends = originalFriends.Where(e => e.UserName.ToLower().Contains(query)).ToList();
             var filteredWeekly = originalWeekly.Where(e => e.UserName.ToLower().Contains(query)).ToList();
 
-            // Update UI
+            // Cập nhật giao diện
             GlobalLeaderboard.Clear();
             FriendsLeaderboard.Clear();
             WeeklyLeaderboard.Clear();
@@ -191,7 +191,7 @@ namespace LanguageLearningApp.ViewModels.User
 
         public async Task ViewUserProfileAsync(string userId)
         {
-            // Navigate to user profile view
+            // Chuyển đến trang hồ sơ người dùng
             await Shell.Current.GoToAsync($"userProfile?userId={userId}");
         }
 
@@ -204,39 +204,39 @@ namespace LanguageLearningApp.ViewModels.User
 
                 if (userId == currentUserId)
                 {
-                    await App.Current.MainPage.DisplayAlert("Friend Request", "You cannot add yourself as a friend", "OK");
+                    await App.Current.MainPage.DisplayAlert("Yêu cầu kết bạn", "Bạn không thể tự thêm mình làm bạn", "OK");
                     return;
                 }
 
-                // Check if already friends
+                // Kiểm tra xem đã là bạn bè chưa
                 var currentUser = await _userService.GetUserByIdAsync(currentUserId, idToken);
                 if (currentUser.FriendIds != null && currentUser.FriendIds.Contains(userId))
                 {
-                    await App.Current.MainPage.DisplayAlert("Friend Request", "You are already friends with this user", "OK");
+                    await App.Current.MainPage.DisplayAlert("Yêu cầu kết bạn", "Bạn đã là bạn bè với người dùng này", "OK");
                     return;
                 }
 
-                // Send friend request (in this simple implementation, we directly add as friend)
+                // Gửi yêu cầu kết bạn (trong triển khai đơn giản này, chúng ta thêm trực tiếp làm bạn)
                 var success = await _userService.AddFriendAsync(currentUserId, userId, idToken);
 
                 if (success)
                 {
-                    // Also add the current user to the other user's friend list (bidirectional friendship)
+                    // Cũng thêm người dùng hiện tại vào danh sách bạn bè của người kia (quan hệ bạn bè hai chiều)
                     await _userService.AddFriendAsync(userId, currentUserId, idToken);
 
-                    await App.Current.MainPage.DisplayAlert("Friend Request", "Friend added successfully!", "OK");
+                    await App.Current.MainPage.DisplayAlert("Yêu cầu kết bạn", "Thêm bạn thành công!", "OK");
 
-                    // Refresh leaderboard to show new friend
+                    // Làm mới bảng xếp hạng để hiển thị bạn mới
                     await LoadLeaderboardAsync();
                 }
                 else
                 {
-                    await App.Current.MainPage.DisplayAlert("Friend Request", "Failed to add friend", "OK");
+                    await App.Current.MainPage.DisplayAlert("Yêu cầu kết bạn", "Không thể thêm bạn", "OK");
                 }
             }
             catch (System.Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Error sending friend request: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi khi gửi yêu cầu kết bạn: {ex.Message}", "OK");
             }
         }
     }

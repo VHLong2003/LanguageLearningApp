@@ -99,13 +99,13 @@ namespace LanguageLearningApp.ViewModels.User
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
 
-                // Load user data
+                // Tải dữ liệu người dùng
                 User = await _userService.GetUserByIdAsync(_userId, idToken);
 
-                // Load all courses
+                // Tải tất cả khóa học
                 var allCourses = await _courseService.GetAllCoursesAsync(idToken);
 
-                // Reset counters
+                // Đặt lại các bộ đếm
                 TotalPoints = User.Points;
                 TotalCompletedLessons = 0;
                 int totalCoursesStarted = 0;
@@ -114,18 +114,18 @@ namespace LanguageLearningApp.ViewModels.User
 
                 foreach (var course in allCourses)
                 {
-                    // Get progress for this course
+                    // Lấy tiến trình cho khóa học này
                     var progress = await _lessonProgressService.GetOverallCourseProgressAsync(_userId, course.CourseId, idToken);
 
                     if (progress > 0)
                     {
                         totalCoursesStarted++;
 
-                        // Calculate completed lessons
+                        // Tính số bài học đã hoàn thành
                         int completedLessons = (int)Math.Round(progress * course.TotalLessons / 100);
                         TotalCompletedLessons += completedLessons;
 
-                        // Add to courses collection
+                        // Thêm vào bộ sưu tập khóa học
                         Courses.Add(new CourseProgressItem
                         {
                             CourseId = course.CourseId,
@@ -139,7 +139,7 @@ namespace LanguageLearningApp.ViewModels.User
                     }
                 }
 
-                // Calculate overall progress (average of started courses)
+                // Tính tiến trình tổng thể (trung bình của các khóa học đã bắt đầu)
                 if (totalCoursesStarted > 0)
                 {
                     double totalProgress = 0;
@@ -156,7 +156,7 @@ namespace LanguageLearningApp.ViewModels.User
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Failed to load progress: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể tải tiến trình: {ex.Message}", "OK");
             }
             finally
             {
@@ -170,6 +170,7 @@ namespace LanguageLearningApp.ViewModels.User
             if (string.IsNullOrEmpty(courseId))
                 return;
 
+            // Chuyển đến chi tiết khóa học
             await Shell.Current.GoToAsync($"courseDetail?courseId={courseId}");
         }
     }

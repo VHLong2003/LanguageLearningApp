@@ -1,54 +1,27 @@
-using System;
-using LanguageLearningApp.ViewModels.User;
+﻿using LanguageLearningApp.ViewModels.User;
+using Microsoft.Maui.Controls;
 
 namespace LanguageLearningApp.Views.User
 {
-    [QueryProperty(nameof(LessonId), "lessonId")]
-    [QueryProperty(nameof(CourseId), "courseId")]
     public partial class LessonPage : ContentPage
     {
-        private LessonViewModel _viewModel;
-        private string _lessonId;
-        private string _courseId;
-
-        public string LessonId
-        {
-            get => _lessonId;
-            set
-            {
-                _lessonId = value;
-                LoadLesson();
-            }
-        }
-
-        public string CourseId
-        {
-            get => _courseId;
-            set
-            {
-                _courseId = value;
-                LoadLesson();
-            }
-        }
+        private readonly LessonViewModel _viewModel;
 
         public LessonPage(LessonViewModel viewModel)
         {
             InitializeComponent();
-            _viewModel = viewModel;
-            BindingContext = _viewModel;
+            BindingContext = _viewModel = viewModel;
         }
 
-        protected override void OnAppearing()
+
+        protected override async void OnAppearing()
         {
             base.OnAppearing();
-            LoadLesson();
-        }
 
-        private async void LoadLesson()
-        {
-            if (!string.IsNullOrEmpty(_lessonId) && !string.IsNullOrEmpty(_courseId))
+            // Khi trang xuất hiện, nạp lại dữ liệu nếu chưa có
+            if (_viewModel.Questions == null || _viewModel.Questions.Count == 0)
             {
-                await _viewModel.InitializeAsync(_lessonId, _courseId);
+                await _viewModel.InitializeAsync();
             }
         }
     }

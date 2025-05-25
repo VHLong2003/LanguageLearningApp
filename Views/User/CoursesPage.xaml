@@ -1,141 +1,177 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="LanguageLearningApp.Views.User.CoursesPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:vm="clr-namespace:LanguageLearningApp.ViewModels.User"
-    Title="Khoá học">
-
-    <ContentPage.Resources>
-        <!-- Style for featured course card -->
-        <Style x:Key="FeaturedCardStyle" TargetType="Frame">
-            <Setter Property="CornerRadius" Value="20"/>
-            <Setter Property="HasShadow" Value="True"/>
-            <Setter Property="BackgroundColor" Value="#EEF4FB"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="HeightRequest" Value="140"/>
-            <Setter Property="WidthRequest" Value="260"/>
-            <Setter Property="Margin" Value="8,0,8,0"/>
-        </Style>
-    </ContentPage.Resources>
+    x:Class="LanguageLearningApp.Views.User.CoursesPage"
+    x:Name="ThisPage"
+    xmlns:models="clr-namespace:LanguageLearningApp.Models"
+    Title="Các Khoá Học"
+    BackgroundColor="#f8fafc">
 
     <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
         <ScrollView>
-            <VerticalStackLayout Spacing="18" Padding="0,16,0,24">
-                <!-- Header & Search -->
-                <VerticalStackLayout Spacing="8" Padding="16,0">
-                    <Label Text="Khoá học" FontSize="32" FontAttributes="Bold" TextColor="#21264C" />
-                    <SearchBar
-                        Placeholder="Tìm kiếm khoá học"
-                        Text="{Binding SearchQuery}"
-                        SearchCommand="{Binding SearchCoursesCommand}"
-                        FontSize="16"
-                        BackgroundColor="#F1F4F9"
-                        CancelButtonColor="#6376E0"
-                        />
-                </VerticalStackLayout>
+            <VerticalStackLayout Spacing="16" Padding="14,18">
+                <!-- Thanh tiêu đề và tìm kiếm -->
+                <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                    <Label Text="KHÓA HỌC" FontSize="22" FontAttributes="Bold" TextColor="#18181b"/>
+                    <Image Source="icon_books.png" HeightRequest="32" WidthRequest="32"/>
+                </HorizontalStackLayout>
 
-                <!-- Categories filter -->
-                <ScrollView Orientation="Horizontal" Margin="0,0,0,4">
-                    <HorizontalStackLayout Padding="16,0" Spacing="12">
+                <SearchBar
+                    Placeholder="Tìm kiếm khoá học..."
+                    Text="{Binding SearchQuery}"
+                    SearchCommand="{Binding SearchCoursesCommand}"
+                    FontSize="15"
+                    CancelButtonColor="#2563eb"
+                    BackgroundColor="White"
+                    Margin="0,4"/>
+
+                <!-- Bộ lọc theo danh mục -->
+                <ScrollView Orientation="Horizontal" HeightRequest="48">
+                    <HorizontalStackLayout Spacing="8">
+                        <!-- Tất cả -->
                         <Button
                             Text="Tất cả"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter=''}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
                             Command="{Binding FilterCoursesByCategoryCommand}"
-                            CommandParameter="{x:Null}"
-                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource NullToColorConverter}, ConverterParameter=#6376E0|#E0E7FF}"
-                            TextColor="#21264C"
-                            CornerRadius="18"
-                            Padding="20,5"
-                            FontAttributes="Bold"
-                            />
-                        <!-- Danh sách động các Category -->
-                        <CollectionView
-                            ItemsSource="{Binding Categories}"
-                            ItemsLayout="HorizontalList"
-                            SelectionMode="Single"
-                            SelectedItem="{Binding SelectedCategory, Mode=TwoWay}">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <Button
-                                        Text="{Binding .}"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CoursesViewModel}}, Path=FilterCoursesByCategoryCommand}"
-                                        CommandParameter="{Binding .}"
-                                        BackgroundColor="{Binding ., Converter={StaticResource CategoryToColorConverter}, ConverterParameter={Binding Source={RelativeSource AncestorType={x:Type vm:CoursesViewModel}}, Path=SelectedCategory}}"
-                                        TextColor="#21264C"
-                                        CornerRadius="18"
-                                        Padding="20,5"
-                                        FontAttributes="Bold"/>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
+                            CommandParameter="{x:Null}" />
+
+                        <Button
+                            Text="Ngôn ngữ"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter='Language'}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
+                            Command="{Binding FilterCoursesByCategoryCommand}"
+                            CommandParameter="{x:Static models:CourseType.Language}" />
+
+                        <Button
+                            Text="Lập trình"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter='Programming'}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
+                            Command="{Binding FilterCoursesByCategoryCommand}"
+                            CommandParameter="{x:Static models:CourseType.Programming}" />
+
+                        <Button
+                            Text="Khoa học"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter='Science'}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
+                            Command="{Binding FilterCoursesByCategoryCommand}"
+                            CommandParameter="{x:Static models:CourseType.Science}" />
+
+                        <Button
+                            Text="Toán học"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter='Mathematics'}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
+                            Command="{Binding FilterCoursesByCategoryCommand}"
+                            CommandParameter="{x:Static models:CourseType.Mathematics}" />
+
+                        <Button
+                            Text="Nghệ thuật"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter='Art'}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
+                            Command="{Binding FilterCoursesByCategoryCommand}"
+                            CommandParameter="{x:Static models:CourseType.Art}" />
+
+                        <Button
+                            Text="Âm nhạc"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter='Music'}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
+                            Command="{Binding FilterCoursesByCategoryCommand}"
+                            CommandParameter="{x:Static models:CourseType.Music}" />
+
+                        <Button
+                            Text="Lịch sử"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter='History'}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
+                            Command="{Binding FilterCoursesByCategoryCommand}"
+                            CommandParameter="{x:Static models:CourseType.History}" />
+
+                        <Button
+                            Text="Khác"
+                            BackgroundColor="{Binding SelectedCategory, Converter={StaticResource CategoryButtonColorConverter}, ConverterParameter='Other'}"
+                            TextColor="#2563eb"
+                            CornerRadius="12"
+                            Padding="16,6"
+                            Command="{Binding FilterCoursesByCategoryCommand}"
+                            CommandParameter="{x:Static models:CourseType.Other}" />
                     </HorizontalStackLayout>
                 </ScrollView>
 
-                <!-- Featured Courses -->
-                <StackLayout>
-                    <Label Text="Nổi bật" FontSize="20" FontAttributes="Bold" Margin="16,4,0,0" IsVisible="{Binding FeaturedCourses.Count, Converter={StaticResource IntToBoolConverter}}"/>
-                    <ScrollView Orientation="Horizontal" HeightRequest="160">
-                        <HorizontalStackLayout Spacing="0">
-                            <CollectionView
-                                ItemsSource="{Binding FeaturedCourses}"
-                                ItemsLayout="HorizontalList"
-                                SelectionMode="Single"
-                                HeightRequest="140">
-                                <CollectionView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Frame Style="{StaticResource FeaturedCardStyle}" Margin="0,8">
-                                            <Grid>
-                                                <Image Source="{Binding ImageUrl}" Aspect="AspectFill" HeightRequest="100" />
-                                                <Label Text="{Binding Title}" FontSize="16" FontAttributes="Bold" TextColor="#3C4662" Margin="8,4,8,0"/>
-                                                <Label Text="{Binding Description}" FontSize="12" LineBreakMode="TailTruncation" Margin="8,28,8,0" TextColor="#5C6B90"/>
-                                            </Grid>
-                                            <Frame.GestureRecognizers>
-                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CoursesViewModel}}, Path=CourseSelectedCommand}" CommandParameter="{Binding .}" />
-                                            </Frame.GestureRecognizers>
-                                        </Frame>
-                                    </DataTemplate>
-                                </CollectionView.ItemTemplate>
-                            </CollectionView>
-                        </HorizontalStackLayout>
-                    </ScrollView>
-                </StackLayout>
-
-                <!-- Danh sách khoá học -->
-                <VerticalStackLayout Padding="0">
-                    <Label Text="Tất cả khoá học" FontSize="20" FontAttributes="Bold" Margin="16,4,0,0" />
-                    <CollectionView
-                        ItemsSource="{Binding Courses}"
-                        SelectionMode="Single"
-                        SelectedItem="{Binding SelectedCourse, Mode=TwoWay}">
+                <!-- Khóa học nổi bật -->
+                <StackLayout IsVisible="{Binding FeaturedCourses.Count, Converter={StaticResource IntGreaterThanZeroConverter}}">
+                    <Label Text="NỔI BẬT" FontSize="17" FontAttributes="Bold" TextColor="#eab308" Margin="0,10,0,0"/>
+                    <CollectionView ItemsSource="{Binding FeaturedCourses}" ItemsLayout="HorizontalList" HeightRequest="170" Margin="0,4,0,0">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Frame CornerRadius="18" HasShadow="True" Padding="0" Margin="12,10,12,0" BackgroundColor="#FFF">
-                                    <Grid Padding="10" RowDefinitions="Auto,Auto" ColumnDefinitions="80,*,Auto">
-                                        <!-- Ảnh khoá học -->
-                                        <Image Source="{Binding ImageUrl}" WidthRequest="60" HeightRequest="60" Aspect="AspectFill" Grid.RowSpan="2" VerticalOptions="Center"/>
-                                        <!-- Thông tin chính -->
-                                        <VerticalStackLayout Grid.Column="1" Padding="10,0,0,0">
-                                            <Label Text="{Binding Title}" FontSize="17" FontAttributes="Bold" TextColor="#21264C"/>
-                                            <Label Text="{Binding Description}" FontSize="12" LineBreakMode="TailTruncation" TextColor="#6A7691" />
-                                        </VerticalStackLayout>
-                                        <!-- Level, Số bài học, điểm yêu cầu -->
-                                        <VerticalStackLayout Grid.Column="2" Padding="0" VerticalOptions="Center">
-                                            <Label Text="{Binding Level}" FontSize="13" TextColor="#6376E0" FontAttributes="Bold"/>
-                                            <Label Text="🧩 {Binding TotalLessons} bài" FontSize="12" TextColor="#3C4662"/>
-                                            <Label Text="🔓 {Binding RequiredPointsToUnlock} điểm" FontSize="12" TextColor="#A1A5BC"/>
-                                        </VerticalStackLayout>
+                                <Frame CornerRadius="18" Padding="0" Margin="0,0,12,0" HasShadow="True" BackgroundColor="#fffbe6" HeightRequest="165" WidthRequest="250">
+                                    <Grid RowDefinitions="*,auto">
+                                        <Image Source="{Binding ImageUrl}" HeightRequest="80" Aspect="AspectFill" Grid.Row="0" />
+                                        <StackLayout Padding="8,4,8,8" Grid.Row="1">
+                                            <Label Text="{Binding Title}" FontSize="15" FontAttributes="Bold" TextColor="#b45309" LineBreakMode="TailTruncation" MaxLines="1"/>
+                                            <Label Text="{Binding Description}" FontSize="12" TextColor="#b68c16" LineBreakMode="WordWrap" MaxLines="2"/>
+                                            <Button Text="Vào học" Command="{Binding BindingContext.CourseSelectedCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="13" BackgroundColor="#fde68a" TextColor="#b45309" CornerRadius="10" HeightRequest="34" Margin="0,8,0,0"/>
+                                        </StackLayout>
                                     </Grid>
-                                    <Frame.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CoursesViewModel}}, Path=CourseSelectedCommand}" CommandParameter="{Binding .}" />
-                                    </Frame.GestureRecognizers>
                                 </Frame>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
-                        <CollectionView.EmptyView>
-                            <Label Text="Không tìm thấy khoá học nào phù hợp." FontSize="16" TextColor="#8B94A3" HorizontalOptions="Center" Margin="0,40,0,0"/>
-                        </CollectionView.EmptyView>
                     </CollectionView>
-                </VerticalStackLayout>
+                </StackLayout>
+
+                <!-- Danh sách khóa học -->
+                <CollectionView ItemsSource="{Binding Courses}" SelectionMode="None" Margin="0,6,0,10">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical"/>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame CornerRadius="14" Padding="0" Margin="0,8" HasShadow="True" BorderColor="#e0e7ef" BackgroundColor="White" HeightRequest="120">
+                                <Grid ColumnDefinitions="100,*,auto">
+                                    <!-- Ảnh -->
+                                    <Frame Padding="0" CornerRadius="10" HasShadow="False" IsClippedToBounds="True" Grid.Column="0" WidthRequest="90" HeightRequest="90" VerticalOptions="Center" HorizontalOptions="Center">
+                                        <Image Source="{Binding ImageUrl}" WidthRequest="90" HeightRequest="90" Aspect="AspectFill"/>
+                                    </Frame>
+                                    <StackLayout Grid.Column="1" Padding="10,12,6,8" Spacing="3">
+                                        <Label Text="{Binding Title}" FontSize="15" FontAttributes="Bold" TextColor="#1e293b" MaxLines="1"/>
+                                        <Label Text="{Binding Description}" FontSize="12" TextColor="#64748b" LineBreakMode="WordWrap" MaxLines="2"/>
+                                        <HorizontalStackLayout Spacing="8" Margin="0,2,0,0">
+                                            <Frame Padding="4,0" CornerRadius="6" BackgroundColor="#fef9c3" HasShadow="False" VerticalOptions="Center">
+                                                <Label FontSize="11" TextColor="#f59e42" Text="{Binding Type, Converter={StaticResource CourseTypeToVietnameseConverter}}"/>
+                                            </Frame>
+                                            <Frame Padding="4,0" CornerRadius="6" BackgroundColor="#dbeafe" HasShadow="False" VerticalOptions="Center">
+                                                <Label FontSize="11" TextColor="#0ea5e9" Text="{Binding DifficultyLevel, StringFormat='Độ khó: {0}'}"/>
+                                            </Frame>
+                                            <Frame Padding="4,0" CornerRadius="6" BackgroundColor="#bbf7d0" HasShadow="False" VerticalOptions="Center">
+                                                <Label FontSize="11" TextColor="#16a34a" Text="{Binding RequiredPointsToUnlock, StringFormat='Điểm mở: {0}'}"/>
+                                            </Frame>
+                                        </HorizontalStackLayout>
+                                    </StackLayout>
+                                    <VerticalStackLayout Grid.Column="2" Padding="2,18,6,0" Spacing="10" VerticalOptions="Center">
+                                        <Button Text="Vào học" Command="{Binding BindingContext.CourseSelectedCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}" FontSize="12" BackgroundColor="#2563eb" TextColor="White" CornerRadius="8" HeightRequest="38"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Label Text="Không có khoá học nào phù hợp." IsVisible="{Binding Courses.Count, Converter={StaticResource IntZeroToBoolConverter}}" HorizontalOptions="Center" TextColor="#b91c1c" FontSize="14" Margin="0,14,0,0"/>
             </VerticalStackLayout>
         </ScrollView>
     </RefreshView>

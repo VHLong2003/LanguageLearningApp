@@ -1,6 +1,5 @@
-﻿using LanguageLearningApp.Models;
-using LanguageLearningApp.Services;
-using LanguageLearningApp.ViewModels.User;
+﻿using LanguageLearningApp.ViewModels.User;
+using Microsoft.Maui.Controls;
 
 namespace LanguageLearningApp.Views.User
 {
@@ -8,17 +7,22 @@ namespace LanguageLearningApp.Views.User
     {
         private readonly CoursesViewModel _viewModel;
 
-        public CoursesPage(CourseService courseService, UserService userService, ProgressService progressService)
+        public CoursesPage(CoursesViewModel viewModel)
         {
             InitializeComponent();
-            _viewModel = new CoursesViewModel(courseService, userService, progressService);
-            BindingContext = _viewModel;
+            BindingContext = _viewModel = viewModel;
         }
 
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-            await _viewModel.InitializeAsync();
+
+            if (_viewModel.Courses == null || _viewModel.Courses.Count == 0)
+            {
+                await _viewModel.InitializeAsync();
+            }
         }
+
+        
     }
 }

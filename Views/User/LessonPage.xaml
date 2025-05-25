@@ -1,234 +1,94 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.User"
-             xmlns:models="clr-namespace:LanguageLearningApp.Models"
-             x:Class="LanguageLearningApp.Views.User.LessonPage"
-             Title="{Binding CurrentLesson.Title}">
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewmodel="clr-namespace:LanguageLearningApp.ViewModels.User"
+    xmlns:models="clr-namespace:LanguageLearningApp.Models"
+    x:Class="LanguageLearningApp.Views.User.LessonPage"
+    x:Name="ThisPage"
+    Title="Làm bài tập"
+    BackgroundColor="#f6fafe">
 
-    <Grid RowDefinitions="Auto,*">
-        <!-- Thanh tiến độ -->
-        <ProgressBar Grid.Row="0"
-                     Progress="{Binding ProgressPercent}"
-                     ProgressColor="#3498db"
-                     HeightRequest="10" />
+    <VerticalStackLayout Padding="18,16" Spacing="20">
+        <!-- Header: Question Progress -->
+        <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+            <Label Text="Câu hỏi" FontSize="16" TextColor="#0ea5e9" FontAttributes="Bold"/>
+            <Label Text="{Binding CurrentQuestionIndex, Converter={StaticResource IntPlusOneConverter}}"
+                   FontAttributes="Bold" TextColor="#1e293b"/>
+            <Label Text="/" />
+            <Label Text="{Binding TotalQuestions}" FontAttributes="Bold" TextColor="#1e293b"/>
+        </HorizontalStackLayout>
 
-        <ScrollView Grid.Row="1">
-            <Grid Padding="20" 
-                  RowDefinitions="Auto,*,Auto">
+        <!-- Question Image -->
+        <Image Source="{Binding CurrentQuestion.ImageUrl}" HeightRequest="120"
+               Aspect="AspectFit" HorizontalOptions="Center"
+               IsVisible="{Binding CurrentQuestion.ImageUrl, Converter={StaticResource StringNotNullOrEmptyConverter}}" />
 
-                <!-- Nội dung bài học khi vừa mở -->
-                <VerticalStackLayout Grid.Row="0" 
-                                    IsVisible="{Binding CurrentQuestionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"
-                                    Spacing="15">
-                    <Label Text="{Binding CurrentLesson.Title}"
-                           FontSize="24"
-                           FontAttributes="Bold"
-                           HorizontalOptions="Center" />
+        <!-- Question Content -->
+        <Label Text="{Binding CurrentQuestion.Content}" FontSize="17"
+               FontAttributes="Bold" TextColor="#1e293b" Margin="0,2" />
 
-                    <Label Text="{Binding CurrentLesson.Description}"
-                           HorizontalOptions="Center" />
-
-                    <Image Source="{Binding CurrentLesson.ImageUrl}"
-                           HeightRequest="200"
-                           Aspect="AspectFit"
-                           HorizontalOptions="Center"
-                           IsVisible="{Binding CurrentLesson.ImageUrl, Converter={StaticResource StringToBoolConverter}}" />
-
-                    <Label Text="{Binding CurrentLesson.Content}"
-                           Margin="0,20" />
-
-                    <Button Text="Bắt đầu học"
-                            Command="{Binding NextQuestionCommand}"
-                            BackgroundColor="#3498db"
-                            TextColor="White"
-                            HorizontalOptions="Center" />
-                </VerticalStackLayout>
-
-                <!-- Phần câu hỏi -->
-                <VerticalStackLayout Grid.Row="1"
-                                     IsVisible="{Binding IsCompleted, Converter={StaticResource InvertBoolConverter}}">
-
-                    <!-- Hiển thị câu hỏi -->
-                    <VerticalStackLayout IsVisible="{Binding CurrentQuestion, Converter={StaticResource NotNullToBoolConverter}}"
-                                         Spacing="15">
-
-                        <Label FontSize="18" HorizontalOptions="Center">
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="Câu hỏi " />
-                                    <Span Text="{Binding CurrentQuestionIndex, Converter={StaticResource IntPlusOneConverter}}" />
-                                    <Span Text=" trên " />
-                                    <Span Text="{Binding TotalQuestions}" />
-                                </FormattedString>
-                            </Label.FormattedText>
-                        </Label>
-
-                        <Image Source="{Binding CurrentQuestion.ImageUrl}"
-                               HeightRequest="150"
-                               Aspect="AspectFit"
-                               HorizontalOptions="Center"
-                               IsVisible="{Binding CurrentQuestion.ImageUrl, Converter={StaticResource StringToBoolConverter}}" />
-
-                        <Label Text="{Binding CurrentQuestion.Content}"
-                               FontSize="18"
-                               FontAttributes="Bold" />
-
-                        <!-- Câu hỏi trắc nghiệm -->
-                        <VerticalStackLayout IsVisible="{Binding CurrentQuestion.Type, Converter={StaticResource EnumEqualConverter}, ConverterParameter={x:Static models:QuestionType.MultipleChoice}}"
-                                             Spacing="10">
-
-                            <CollectionView ItemsSource="{Binding CurrentQuestion.Options}">
-                                <CollectionView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Padding="10,5">
-                                            <Frame CornerRadius="10"
-                                                   BorderColor="{Binding ., Converter={StaticResource AnswerToColorConverter}, ConverterParameter={Binding Source={RelativeSource AncestorType={x:Type viewmodel:LessonViewModel}}, Path=SelectedAnswer}}"
-                                                   HasShadow="False">
-                                                <Label Text="{Binding .}"
-                                                       Padding="10" />
-
-                                                <Frame.GestureRecognizers>
-                                                    <TapGestureRecognizer 
-                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:LessonViewModel}}, Path=AnswerCommand}"
-                                                        CommandParameter="{Binding .}" />
-                                                </Frame.GestureRecognizers>
-                                            </Frame>
-                                        </Grid>
-                                    </DataTemplate>
-                                </CollectionView.ItemTemplate>
-                            </CollectionView>
-                        </VerticalStackLayout>
-
-                        <!-- Câu hỏi đúng/sai -->
-                        <VerticalStackLayout IsVisible="{Binding CurrentQuestion.Type, Converter={StaticResource EnumEqualConverter}, ConverterParameter={x:Static models:QuestionType.TrueFalse}}"
-                                             Spacing="10">
-
-                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                                <Button Text="Đúng"
-                                        Grid.Column="0"
-                                        Command="{Binding AnswerCommand}"
-                                        CommandParameter="True"
-                                        IsEnabled="{Binding HasAnswered, Converter={StaticResource InvertBoolConverter}}"
-                                        BackgroundColor="{Binding SelectedAnswer, Converter={StaticResource AnswerToColorConverter}, ConverterParameter='True'}" />
-
-                                <Button Text="Sai"
-                                        Grid.Column="1"
-                                        Command="{Binding AnswerCommand}"
-                                        CommandParameter="False"
-                                        IsEnabled="{Binding HasAnswered, Converter={StaticResource InvertBoolConverter}}"
-                                        BackgroundColor="{Binding SelectedAnswer, Converter={StaticResource AnswerToColorConverter}, ConverterParameter='False'}" />
-                            </Grid>
-                        </VerticalStackLayout>
-
-                        <!-- Phản hồi sau trả lời -->
-                        <VerticalStackLayout IsVisible="{Binding HasAnswered}"
-                                             Spacing="10">
-
-                            <Label Text="{Binding IsAnswerCorrect, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Chính xác!|Chưa đúng'}"
-                                   FontSize="18"
-                                   FontAttributes="Bold"
-                                   TextColor="{Binding IsAnswerCorrect, Converter={StaticResource BoolToColorConverter}, ConverterParameter='Green|Red'}"
-                                   HorizontalOptions="Center" />
-
-                            <Label Text="{Binding Explanation}"
-                                   IsVisible="{Binding Explanation, Converter={StaticResource StringToBoolConverter}}"
-                                   Margin="0,10" />
-
-                            <Button Text="Câu hỏi tiếp theo"
-                                    Command="{Binding NextQuestionCommand}"
-                                    BackgroundColor="#3498db"
-                                    TextColor="White"
-                                    HorizontalOptions="Center" />
-                        </VerticalStackLayout>
-
-                    </VerticalStackLayout>
-                </VerticalStackLayout>
-
-                <!-- Kết quả bài học -->
-                <VerticalStackLayout Grid.Row="2"
-                                     IsVisible="{Binding IsCompleted}"
-                                     Spacing="20"
-                                     Margin="0,20">
-
-                    <Label Text="Hoàn thành bài học!"
-                           FontSize="24"
-                           FontAttributes="Bold"
-                           HorizontalOptions="Center" />
-
-                    <Image Source="lesson_complete.png"
-                           HeightRequest="150"
-                           Aspect="AspectFit"
-                           HorizontalOptions="Center" />
-
-                    <Frame CornerRadius="10"
-                           BorderColor="#3498db"
-                           Padding="20"
-                           HasShadow="True">
-
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="Kết quả của bạn"
-                                   FontAttributes="Bold"
-                                   FontSize="18"
-                                   HorizontalOptions="Center" />
-
-                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
-                                <Label Text="Số câu đúng:"
-                                       Grid.Row="0"
-                                       Grid.Column="0" />
-                                <Label Grid.Row="0"
-                                       Grid.Column="1"
-                                       FontAttributes="Bold">
-                                    <Label.FormattedText>
-                                        <FormattedString>
-                                            <Span Text="{Binding CorrectAnswers}" />
-                                            <Span Text="/" />
-                                            <Span Text="{Binding TotalQuestions}" />
-                                        </FormattedString>
-                                    </Label.FormattedText>
-                                </Label>
-
-                                <Label Text="Tỉ lệ chính xác:"
-                                       Grid.Row="1"
-                                       Grid.Column="0" />
-                                <Label Text="{Binding CorrectAnswers, Converter={StaticResource AccuracyConverter}, ConverterParameter={Binding TotalQuestions}}"
-                                       Grid.Row="1"
-                                       Grid.Column="1"
-                                       FontAttributes="Bold" />
-
-                                <Label Text="Điểm đạt được:"
-                                       Grid.Row="2"
-                                       Grid.Column="0" />
-                                <Label Text="{Binding EarnedPoints, StringFormat='+{0}'}"
-                                       Grid.Row="2"
-                                       Grid.Column="1"
-                                       TextColor="Green"
-                                       FontAttributes="Bold" />
-                            </Grid>
-                        </VerticalStackLayout>
+        <!-- Multiple Choice -->
+        <CollectionView ItemsSource="{Binding CurrentQuestion.Options}"
+            IsVisible="{Binding CurrentQuestion.Type, Converter={StaticResource EnumEqualConverter}, ConverterParameter=MultipleChoice}"
+            SelectionMode="None" Margin="0,2">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame CornerRadius="14" Padding="10,7" Margin="0,6,0,0"
+                           BackgroundColor="{Binding ., Converter={StaticResource AnswerStateToColorConverter}, ConverterParameter={x:Reference ThisPage}}"
+                           HasShadow="False">
+                        <Label Text="{Binding .}" FontSize="15" TextColor="#23272f"/>
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding BindingContext.AnswerCommand, Source={x:Reference ThisPage}}"
+                                                  CommandParameter="{Binding .}"/>
+                        </Frame.GestureRecognizers>
                     </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
 
-                    <Button Text="Kết thúc bài học"
-                            Command="{Binding FinishLessonCommand}"
-                            BackgroundColor="#2ecc71"
-                            TextColor="White" />
+        <!-- True/False -->
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="16"
+              IsVisible="{Binding CurrentQuestion.Type, Converter={StaticResource EnumEqualConverter}, ConverterParameter=TrueFalse}">
+            <Button Text="Đúng" Grid.Column="0"
+                    Command="{Binding AnswerCommand}" CommandParameter="True"
+                    IsEnabled="{Binding HasAnswered, Converter={StaticResource InvertBoolConverter}}"
+                    BackgroundColor="{Binding SelectedAnswer, Converter={StaticResource AnswerTrueFalseColorConverter}, ConverterParameter=True}"
+                    TextColor="Black" FontSize="15" CornerRadius="10" Padding="16,7"/>
+            <Button Text="Sai" Grid.Column="1"
+                    Command="{Binding AnswerCommand}" CommandParameter="False"
+                    IsEnabled="{Binding HasAnswered, Converter={StaticResource InvertBoolConverter}}"
+                    BackgroundColor="{Binding SelectedAnswer, Converter={StaticResource AnswerTrueFalseColorConverter}, ConverterParameter=False}"
+                    TextColor="Black" FontSize="15" CornerRadius="10" Padding="16,7"/>
+        </Grid>
 
-                    <Button Text="Làm lại bài học"
-                            Command="{Binding RetryLessonCommand}"
-                            BackgroundColor="Transparent"
-                            TextColor="#3498db"
-                            BorderColor="#3498db"
-                            BorderWidth="1" />
-                </VerticalStackLayout>
+        <!-- Essay / Fill In (Tự luận hoặc điền chỗ trống) -->
+        <VerticalStackLayout IsVisible="{Binding CurrentQuestion.Type, Converter={StaticResource EnumEqualConverter}, ConverterParameter=Essay}">
+            <Editor Text="{Binding UserAnswer}" Placeholder="Nhập đáp án của bạn..."
+                    FontSize="15" HeightRequest="60" BackgroundColor="#f5f7fa" Margin="0,4,0,8"/>
+            <Button Text="Gửi đáp án" Command="{Binding SubmitAnswerCommand}"
+                    IsEnabled="{Binding HasAnswered, Converter={StaticResource InvertBoolConverter}}"
+                    Style="{StaticResource PrimaryButton}"/>
+        </VerticalStackLayout>
 
-                <!-- Đang tải -->
-                <ActivityIndicator Grid.Row="0"
-                                   Grid.RowSpan="3"
-                                   IsRunning="{Binding IsLoading}"
-                                   IsVisible="{Binding IsLoading}"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center" />
-            </Grid>
-        </ScrollView>
-    </Grid>
+        <!-- Feedback -->
+        <StackLayout IsVisible="{Binding HasAnswered}">
+            <Label Text="{Binding IsAnswerCorrect, Converter={StaticResource CorrectToFeedbackTextConverter}}"
+                   FontSize="16" FontAttributes="Bold"
+                   TextColor="{Binding IsAnswerCorrect, Converter={StaticResource CorrectToFeedbackColorConverter}}"
+                   HorizontalOptions="Center"/>
+            <Label Text="{Binding Explanation}" FontSize="13"
+                   TextColor="#64748b" Margin="0,3,0,0"
+                   IsVisible="{Binding Explanation, Converter={StaticResource StringNotNullOrEmptyConverter}}"/>
+            <Button Text="{Binding CurrentQuestionIndex, Converter={StaticResource IsLastQuestionToNextOrFinishTextConverter}, ConverterParameter={Binding TotalQuestions}}"
+                    Command="{Binding NextQuestionCommand}"
+                    FontAttributes="Bold" BackgroundColor="#0ea5e9"
+                    TextColor="Black" CornerRadius="10" Padding="18,8"
+                    Margin="0,10,0,0"/>
+        </StackLayout>
+
+        <!-- Loading -->
+        <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+            Color="#2563eb" Margin="0,14"/>
+    </VerticalStackLayout>
 </ContentPage>

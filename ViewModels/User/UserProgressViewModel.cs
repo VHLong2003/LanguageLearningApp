@@ -100,27 +100,27 @@ namespace LanguageLearningApp.ViewModels.Admin
             {
                 var idToken = LocalStorageHelper.GetItem("idToken");
 
-                // Load user data
+                // Tải dữ liệu người dùng
                 User = await _userService.GetUserByIdAsync(_userId, idToken);
 
                 if (User != null)
                 {
-                    // Load badge count
+                    // Tải số lượng huy hiệu
                     var badges = await _badgeService.GetUserBadgesAsync(_userId, idToken);
                     BadgeCount = badges.Count;
 
-                    // Load progress data
+                    // Tải dữ liệu tiến trình
                     var progressData = await _progressService.GetUserProgressAsync(_userId, idToken);
 
-                    // Get all courses
+                    // Lấy tất cả khóa học
                     var allCourses = await _courseService.GetAllCoursesAsync(idToken);
 
-                    // Group progress by course
+                    // Nhóm tiến trình theo khóa học
                     var courseGroups = progressData
                         .GroupBy(p => p.CourseId)
                         .ToDictionary(g => g.Key, g => g.ToList());
 
-                    // Clear and rebuild course progress
+                    // Xóa và xây dựng lại tiến trình khóa học
                     CourseProgress.Clear();
 
                     foreach (var courseId in courseGroups.Keys)
@@ -128,22 +128,22 @@ namespace LanguageLearningApp.ViewModels.Admin
                         var course = allCourses.FirstOrDefault(c => c.CourseId == courseId);
                         if (course != null)
                         {
-                            // Get lessons for this course
+                            // Lấy các bài học cho khóa học này
                             var courseLessons = await _lessonService.GetLessonsByCourseIdAsync(courseId, idToken);
 
-                            // Calculate course completion percentage
+                            // Tính phần trăm hoàn thành khóa học
                             int completedLessons = courseGroups[courseId].Count(p => p.PercentComplete == 100);
                             double progressPercent = course.TotalLessons > 0 ?
                                 (double)completedLessons / course.TotalLessons :
                                 0;
 
-                            // Calculate total points earned in this course
+                            // Tính tổng số điểm kiếm được trong khóa học này
                             int totalPoints = courseGroups[courseId].Sum(p => p.EarnedPoints);
 
-                            // Calculate total time spent in this course (in seconds)
+                            // Tính tổng thời gian sử dụng trong khóa học này (tính bằng giây)
                             int totalTime = courseGroups[courseId].Sum(p => p.TimeSpent);
 
-                            // Create lesson progress data
+                            // Tạo dữ liệu tiến trình bài học
                             var lessonProgress = new ObservableCollection<LessonProgressItem>();
                             foreach (var lesson in courseLessons.OrderBy(l => l.Order))
                             {
@@ -172,11 +172,11 @@ namespace LanguageLearningApp.ViewModels.Admin
                         }
                     }
 
-                    // Create recent activity timeline
+                    // Tạo dòng thời gian hoạt động gần đây
                     RecentActivity.Clear();
                     foreach (var progress in progressData.OrderByDescending(p => p.CompletedDate).Take(10))
                     {
-                        // Get course and lesson info
+                        // Lấy thông tin khóa học và bài học
                         var course = allCourses.FirstOrDefault(c => c.CourseId == progress.CourseId);
                         var lesson = await _lessonService.GetLessonByIdAsync(progress.LessonId, idToken);
 
@@ -185,7 +185,7 @@ namespace LanguageLearningApp.ViewModels.Admin
                             RecentActivity.Add(new ActivityModel
                             {
                                 Date = progress.CompletedDate,
-                                Description = $"Completed lesson \"{lesson.Title}\" in \"{course.Title}\"",
+                                Description = $"Hoàn thành bài học \"{lesson.Title}\" trong \"{course.Title}\"",
                                 Points = progress.EarnedPoints
                             });
                         }
@@ -194,7 +194,7 @@ namespace LanguageLearningApp.ViewModels.Admin
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Failed to load user data: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể tải dữ liệu người dùng: {ex.Message}", "OK");
             }
             finally
             {

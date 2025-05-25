@@ -39,7 +39,7 @@ namespace LanguageLearningApp.ViewModels.User
             {
                 if (SetProperty(ref _courseId, value) && !string.IsNullOrEmpty(value))
                 {
-                    // When courseId is set via QueryProperty, load data
+                    // Khi courseId được đặt qua QueryProperty, tải dữ liệu
                     Task.Run(async () => await LoadCourseDetailsAsync());
                 }
             }
@@ -145,28 +145,28 @@ namespace LanguageLearningApp.ViewModels.User
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var userId = LocalStorageHelper.GetItem("userId");
 
-                // Load current user data
+                // Tải dữ liệu người dùng hiện tại
                 _currentUser = await _userService.GetUserByIdAsync(userId, idToken);
 
-                // Load course details
+                // Tải chi tiết khóa học
                 Course = await _courseService.GetCourseByIdAsync(CourseId, idToken);
 
                 if (Course != null)
                 {
-                    // Load lessons and progress
+                    // Tải bài học và tiến trình
                     await LoadLessonsAndProgressAsync();
 
-                    // Update course progress
+                    // Cập nhật tiến trình khóa học
                     CourseProgress = await _lessonProgressService.GetOverallCourseProgressAsync(userId, CourseId, idToken) / 100.0;
                 }
                 else
                 {
-                    ErrorMessage = "Course not found";
+                    ErrorMessage = "Không tìm thấy khóa học";
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error loading course: {ex.Message}";
+                ErrorMessage = $"Lỗi khi tải khóa học: {ex.Message}";
             }
             finally
             {
@@ -185,7 +185,7 @@ namespace LanguageLearningApp.ViewModels.User
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error refreshing lessons: {ex.Message}";
+                ErrorMessage = $"Lỗi khi làm mới bài học: {ex.Message}";
             }
             finally
             {
@@ -198,20 +198,20 @@ namespace LanguageLearningApp.ViewModels.User
             var idToken = LocalStorageHelper.GetItem("idToken");
             var userId = LocalStorageHelper.GetItem("userId");
 
-            // Load all lessons for this course
+            // Tải tất cả bài học cho khóa học này
             var lessons = await _lessonService.GetLessonsByCourseIdAsync(CourseId, idToken);
 
-            // Sort by order
+            // Sắp xếp theo thứ tự
             lessons.Sort((a, b) => a.Order.CompareTo(b.Order));
 
-            // Get progress info for all lessons in this course
+            // Lấy thông tin tiến trình cho tất cả bài học trong khóa học này
             var lessonProgressList = await _lessonProgressService.GetUserLessonProgressAsync(userId, CourseId, idToken);
 
-            // Also get old progress records for backward compatibility and stats
+            // Lấy các bản ghi tiến trình cũ để đảm bảo tính tương thích ngược và thống kê
             var progressList = await _progressService.GetUserProgressAsync(userId, idToken);
             var courseProgress = progressList.Where(p => p.CourseId == CourseId).ToList();
 
-            // Track course statistics
+            // Theo dõi thống kê khóa học
             CompletedLessons = 0;
             TotalPoints = 0;
             TotalTime = 0;
@@ -219,7 +219,7 @@ namespace LanguageLearningApp.ViewModels.User
             LessonsWithProgress.Clear();
             int unlocked = 0;
             bool foundNextLesson = false;
-            int previousLessonComplete = 1; // First lesson is always unlocked
+            int previousLessonComplete = 1; // Bài học đầu tiên luôn được mở khóa
 
             foreach (var lesson in lessons)
             {
@@ -230,7 +230,7 @@ namespace LanguageLearningApp.ViewModels.User
                 double percentComplete = lessonProgress?.PercentComplete ?? 0;
                 int earnedPoints = lessonProgress?.EarnedPoints ?? 0;
 
-                // Fallback to old progress model if needed
+                // Sử dụng mô hình tiến trình cũ nếu cần
                 if (!isCompleted && oldProgress != null && oldProgress.PercentComplete == 100)
                 {
                     isCompleted = true;
@@ -238,10 +238,10 @@ namespace LanguageLearningApp.ViewModels.User
                     earnedPoints = oldProgress.EarnedPoints;
                 }
 
-                bool isUnlocked = lesson.Order == 1 || // First lesson is always unlocked
+                bool isUnlocked = lesson.Order == 1 || // Bài học đầu tiên luôn được mở khóa
                                 (_currentUser.Points >= lesson.RequiredPointsToUnlock && previousLessonComplete == 1);
 
-                // Update course statistics
+                // Cập nhật thống kê khóa học
                 if (isCompleted)
                 {
                     CompletedLessons++;
@@ -254,7 +254,7 @@ namespace LanguageLearningApp.ViewModels.User
 
                 previousLessonComplete = isCompleted ? 1 : 0;
 
-                // Find next lesson to complete
+                // Tìm bài học tiếp theo cần hoàn thành
                 if (!isCompleted && isUnlocked && !foundNextLesson)
                 {
                     NextLessonTitle = lesson.Title;
@@ -274,10 +274,10 @@ namespace LanguageLearningApp.ViewModels.User
                 });
             }
 
-            // If all lessons are completed
+            // Nếu tất cả bài học đã hoàn thành
             if (!foundNextLesson)
             {
-                NextLessonTitle = "All lessons completed!";
+                NextLessonTitle = "Tất cả bài học đã hoàn thành!";
             }
         }
 
@@ -288,15 +288,15 @@ namespace LanguageLearningApp.ViewModels.User
 
             if (!lessonProgress.IsUnlocked)
             {
-                // Show message about locked lesson
+                // Hiển thị thông báo về bài học bị khóa
                 await App.Current.MainPage.DisplayAlert(
-                    "Lesson Locked",
-                    $"You need {lessonProgress.Lesson.RequiredPointsToUnlock} points to unlock this lesson. You currently have {_currentUser.Points} points.",
+                    "Bài học bị khóa",
+                    $"Bạn cần {lessonProgress.Lesson.RequiredPointsToUnlock} điểm để mở khóa bài học này. Hiện tại bạn có {_currentUser.Points} điểm.",
                     "OK");
                 return;
             }
 
-            // Navigate to lesson
+            // Chuyển đến bài học
             await Shell.Current.GoToAsync($"lesson?lessonId={lessonProgress.Lesson.LessonId}&courseId={CourseId}");
         }
 
@@ -309,18 +309,18 @@ namespace LanguageLearningApp.ViewModels.User
             {
                 await Share.RequestAsync(new ShareTextRequest
                 {
-                    Title = $"Check out this course: {Course.Title}",
-                    Text = $"I'm learning {Course.Title} on Language Learning App. It's a {Course.Type} course with {Course.TotalLessons} lessons. Join me!"
+                    Title = $"Hãy xem khóa học này: {Course.Title}",
+                    Text = $"Tôi đang học {Course.Title} trên ứng dụng Language Learning App. Đây là khóa học {Course.Type} với {Course.TotalLessons} bài học. Tham gia cùng tôi!"
                 });
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Sharing Failed", $"Could not share the course: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Chia sẻ thất bại", $"Không thể chia sẻ khóa học: {ex.Message}", "OK");
             }
         }
     }
 
-    // Helper class to represent lesson progress in the UI
+    // Lớp hỗ trợ để biểu diễn tiến trình bài học trong giao diện người dùng
     public class LessonProgressItem : BaseViewModel
     {
         private LessonModel _lesson;
@@ -385,12 +385,12 @@ namespace LanguageLearningApp.ViewModels.User
             get
             {
                 if (IsCompleted)
-                    return "Completed";
+                    return "Hoàn thành";
                 if (!IsUnlocked)
-                    return "Locked";
+                    return "Bị khóa";
                 if (CurrentQuestionIndex > 0)
-                    return "In Progress";
-                return "Not Started";
+                    return "Đang tiến hành";
+                return "Chưa bắt đầu";
             }
         }
 

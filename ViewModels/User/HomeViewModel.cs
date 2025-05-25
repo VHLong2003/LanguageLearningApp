@@ -132,25 +132,25 @@ namespace LanguageLearningApp.ViewModels.User
             set => SetProperty(ref _isRefreshing, value);
         }
 
-        // Commands
+        // Các lệnh
         public ICommand RefreshCommand { get; }
         public ICommand ContinueLearningCommand { get; }
         public ICommand CourseSelectedCommand { get; }
         public ICommand ViewLeaderboardCommand { get; }
 
-        // Daily motivations
+        // Các câu động lực hàng ngày
         private readonly string[] _motivations = new string[]
         {
-            "Consistency is key to mastering a new skill!",
-            "Every lesson completed is a step towards fluency.",
-            "Learning a little each day adds up to big results.",
-            "Your brain is like a muscle - exercise it daily!",
-            "The more you practice, the easier it becomes.",
-            "Small steps every day lead to big achievements.",
-            "Your future self will thank you for learning today.",
-            "The best time to learn is always now.",
-            "Every expert was once a beginner.",
-            "Keep your streak going - you're doing great!"
+            "Tính kiên trì là chìa khóa để thành thạo một kỹ năng mới!",
+            "Mỗi bài học hoàn thành là một bước tiến tới sự thông thạo.",
+            "Học một chút mỗi ngày sẽ dẫn đến những kết quả lớn.",
+            "Bộ não của bạn giống như một cơ bắp - hãy rèn luyện nó hàng ngày!",
+            "Càng luyện tập nhiều, mọi thứ sẽ càng trở nên dễ dàng.",
+            "Những bước nhỏ mỗi ngày dẫn đến những thành tựu lớn.",
+            "Tương lai của bạn sẽ cảm ơn bạn vì đã học hôm nay.",
+            "Thời điểm tốt nhất để học luôn là bây giờ.",
+            "Mọi chuyên gia đều từng là người mới bắt đầu.",
+            "Hãy giữ chuỗi học tập của bạn - bạn đang làm rất tốt!"
         };
 
         public HomeViewModel(
@@ -177,7 +177,7 @@ namespace LanguageLearningApp.ViewModels.User
             CourseSelectedCommand = new Command<CourseModel>(async (course) => await OnCourseSelected(course));
             ViewLeaderboardCommand = new Command(async () => await ViewLeaderboardAsync());
 
-            // Set default values
+            // Thiết lập giá trị mặc định
             DailyGoalProgress = 0;
             HasCurrentCourse = false;
             HasRecentBadges = false;
@@ -197,59 +197,59 @@ namespace LanguageLearningApp.ViewModels.User
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var userId = LocalStorageHelper.GetItem("userId");
 
-                // Load user data
+                // Tải dữ liệu người dùng
                 var user = await _userService.GetUserByIdAsync(userId, idToken);
 
                 if (user != null)
                 {
-                    // Set welcome message based on time of day
+                    // Thiết lập thông điệp chào hỏi dựa trên thời gian trong ngày
                     var timeOfDay = DateTime.Now.Hour;
                     string greeting;
 
                     if (timeOfDay < 12)
-                        greeting = "Good Morning";
+                        greeting = "Chào buổi sáng";
                     else if (timeOfDay < 18)
-                        greeting = "Good Afternoon";
+                        greeting = "Chào buổi chiều";
                     else
-                        greeting = "Good Evening";
+                        greeting = "Chào buổi tối";
 
                     WelcomeMessage = $"{greeting}, {user.FullName}!";
 
-                    // Set random daily motivation
+                    // Thiết lập câu động lực ngẫu nhiên hàng ngày
                     var random = new Random();
                     DailyMotivation = _motivations[random.Next(_motivations.Length)];
 
-                    // Set user stats
+                    // Thiết lập thống kê người dùng
                     CurrentStreak = user.CurrentStreak;
                     TotalPoints = user.Points;
 
-                    // Set daily goal progress
-                    // Assuming daily goal is 5 lessons or 50 points
+                    // Thiết lập tiến trình mục tiêu hàng ngày
+                    // Giả sử mục tiêu hàng ngày là 5 bài học hoặc 50 điểm
                     var today = DateTime.Today;
                     var todayProgress = await _progressService.GetUserProgressAsync(userId, idToken);
                     var todayCompletions = todayProgress.Count(p => p.CompletedDate.Date == today);
                     var todayPoints = todayProgress.Where(p => p.CompletedDate.Date == today).Sum(p => p.EarnedPoints);
 
-                    // Use whichever is greater - lesson count or points
-                    var lessonProgress = todayCompletions / 5.0; // 5 lessons per day
-                    var pointsProgress = todayPoints / 50.0; // 50 points per day
+                    // Sử dụng giá trị lớn hơn - số bài học hoặc điểm
+                    var lessonProgress = todayCompletions / 5.0; // 5 bài học mỗi ngày
+                    var pointsProgress = todayPoints / 50.0; // 50 điểm mỗi ngày
                     DailyGoalProgress = Math.Min(1.0, Math.Max(lessonProgress, pointsProgress));
 
                     if (DailyGoalProgress >= 1.0)
-                        DailyGoalMessage = "Daily goal complete! Great job!";
+                        DailyGoalMessage = "Hoàn thành mục tiêu hàng ngày! Tuyệt vời!";
                     else if (DailyGoalProgress > 0)
-                        DailyGoalMessage = $"Progress: {DailyGoalProgress:P0} toward daily goal";
+                        DailyGoalMessage = $"Tiến trình: {DailyGoalProgress:P0} hướng tới mục tiêu hàng ngày";
                     else
-                        DailyGoalMessage = "Start learning to reach your daily goal!";
+                        DailyGoalMessage = "Bắt đầu học để đạt mục tiêu hàng ngày!";
 
-                    // Load recent badges
+                    // Tải các huy hiệu gần đây
                     var badges = await _badgeService.GetUserBadgesAsync(userId, idToken);
                     RecentBadges.Clear();
 
                     if (badges.Count > 0)
                     {
                         HasRecentBadges = true;
-                        foreach (var badge in badges.Take(5)) // Take most recent 5
+                        foreach (var badge in badges.Take(5)) // Lấy 5 huy hiệu gần đây nhất
                         {
                             RecentBadges.Add(badge);
                         }
@@ -259,12 +259,12 @@ namespace LanguageLearningApp.ViewModels.User
                         HasRecentBadges = false;
                     }
 
-                    // Find current course in progress
+                    // Tìm khóa học hiện tại đang tiến hành
                     var allProgress = await _progressService.GetUserProgressAsync(userId, idToken);
 
                     if (allProgress.Count > 0)
                     {
-                        // Group by course and find most recent
+                        // Nhóm theo khóa học và tìm khóa học gần đây nhất
                         var courseGroups = allProgress
                             .GroupBy(p => p.CourseId)
                             .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.LastAttemptDate).First());
@@ -279,19 +279,19 @@ namespace LanguageLearningApp.ViewModels.User
                                 CurrentCourse = course;
                                 HasCurrentCourse = true;
 
-                                // Calculate course progress
+                                // Tính tiến trình khóa học
                                 CourseProgress = await _progressService.GetCourseProgressPercentAsync(userId, course.CourseId, idToken) / 100.0;
-                                CourseProgressText = $"{CourseProgress:P0} Complete";
+                                CourseProgressText = $"Hoàn thành {CourseProgress:P0}";
 
-                                // Find current lesson
+                                // Tìm bài học hiện tại
                                 var lessons = await _lessonService.GetLessonsByCourseIdAsync(course.CourseId, idToken);
 
                                 if (lessons.Count > 0)
                                 {
-                                    // Sort by order
+                                    // Sắp xếp theo thứ tự
                                     lessons.Sort((a, b) => a.Order.CompareTo(b.Order));
 
-                                    // Find first lesson that's not 100% complete
+                                    // Tìm bài học đầu tiên chưa hoàn thành 100%
                                     var currentLesson = lessons.FirstOrDefault(l =>
                                     {
                                         var lessonProgress = allProgress.FirstOrDefault(p => p.LessonId == l.LessonId);
@@ -304,8 +304,8 @@ namespace LanguageLearningApp.ViewModels.User
                                     }
                                     else
                                     {
-                                        // All lessons complete
-                                        CurrentLessonTitle = "All lessons completed!";
+                                        // Tất cả bài học đã hoàn thành
+                                        CurrentLessonTitle = "Tất cả bài học đã hoàn thành!";
                                     }
                                 }
                             }
@@ -316,21 +316,21 @@ namespace LanguageLearningApp.ViewModels.User
                         HasCurrentCourse = false;
                     }
 
-                    // Load recommended courses
+                    // Tải các khóa học được đề xuất
                     var allCourses = await _courseService.GetPublishedCoursesAsync(idToken);
-                    var userLevel = user.Points / 100; // Estimate user level
+                    var userLevel = user.Points / 100; // Ước tính cấp độ người dùng
 
-                    // Filter courses based on user level and not already completed
+                    // Lọc các khóa học dựa trên cấp độ người dùng và chưa hoàn thành
                     var completedCourseIds = allProgress
                         .GroupBy(p => p.CourseId)
-                        .Where(g => g.Count() >= 5) // Assuming at least 5 lessons completed means course is done
+                        .Where(g => g.Count() >= 5) // Giả sử hoàn thành ít nhất 5 bài học nghĩa là khóa học đã xong
                         .Select(g => g.Key)
                         .ToList();
 
                     var recommendedCourses = allCourses
                         .Where(c => !completedCourseIds.Contains(c.CourseId) &&
                                c.RequiredPointsToUnlock <= user.Points &&
-                               c.DifficultyLevel <= userLevel + 2) // Slightly challenging
+                               c.DifficultyLevel <= userLevel + 2) // Hơi thử thách
                         .OrderBy(c => c.DifficultyLevel)
                         .Take(5)
                         .ToList();
@@ -341,7 +341,7 @@ namespace LanguageLearningApp.ViewModels.User
                         RecommendedCourses.Add(course);
                     }
 
-                    // Load leaderboard
+                    // Tải bảng xếp hạng
                     var leaderboard = await _leaderboardService.GetGlobalLeaderboardAsync(idToken);
                     var topUsers = leaderboard.Take(5).ToList();
 
@@ -354,7 +354,7 @@ namespace LanguageLearningApp.ViewModels.User
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Failed to load home data: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể tải dữ liệu trang chủ: {ex.Message}", "OK");
             }
             finally
             {
@@ -372,18 +372,18 @@ namespace LanguageLearningApp.ViewModels.User
                 var idToken = LocalStorageHelper.GetItem("idToken");
                 var userId = LocalStorageHelper.GetItem("userId");
 
-                // Get all lessons for the course
+                // Lấy tất cả bài học cho khóa học
                 var lessons = await _lessonService.GetLessonsByCourseIdAsync(CurrentCourse.CourseId, idToken);
 
                 if (lessons.Count > 0)
                 {
-                    // Sort by order
+                    // Sắp xếp theo thứ tự
                     lessons.Sort((a, b) => a.Order.CompareTo(b.Order));
 
-                    // Get all user progress for this course
+                    // Lấy tất cả tiến trình người dùng cho khóa học này
                     var allProgress = await _progressService.GetUserProgressAsync(userId, idToken);
 
-                    // Find first lesson that's not complete
+                    // Tìm bài học đầu tiên chưa hoàn thành
                     var currentLesson = lessons.FirstOrDefault(l =>
                     {
                         var lessonProgress = allProgress.FirstOrDefault(p => p.LessonId == l.LessonId);
@@ -392,19 +392,19 @@ namespace LanguageLearningApp.ViewModels.User
 
                     if (currentLesson != null)
                     {
-                        // Navigate to lesson
+                        // Chuyển đến bài học
                         await Shell.Current.GoToAsync($"lesson?lessonId={currentLesson.LessonId}&courseId={CurrentCourse.CourseId}");
                     }
                     else
                     {
-                        // All lessons complete, go to course detail
+                        // Tất cả bài học đã hoàn thành, chuyển đến chi tiết khóa học
                         await Shell.Current.GoToAsync($"courseDetail?courseId={CurrentCourse.CourseId}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                await App.Current.MainPage.DisplayAlert("Error", $"Failed to continue learning: {ex.Message}", "OK");
+                await App.Current.MainPage.DisplayAlert("Lỗi", $"Không thể tiếp tục học: {ex.Message}", "OK");
             }
         }
 
@@ -413,13 +413,13 @@ namespace LanguageLearningApp.ViewModels.User
             if (course == null)
                 return;
 
-            // Navigate to course detail
+            // Chuyển đến chi tiết khóa học
             await Shell.Current.GoToAsync($"courseDetail?courseId={course.CourseId}");
         }
 
         private async Task ViewLeaderboardAsync()
         {
-            // Navigate to leaderboard tab
+            // Chuyển đến tab bảng xếp hạng
             await Shell.Current.GoToAsync("//leaderboard");
         }
     }

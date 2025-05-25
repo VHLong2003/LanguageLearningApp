@@ -25,7 +25,10 @@
             <!-- CategoryDetaill Converters-->
             <converters:StringNotEmptyToBoolConverter x:Key="StringNotEmptyToBoolConverter" />
             <converters:InvertBoolConverter x:Key="InvertBoolConverter" />
-
+            <converters:CategoryButtonColorConverter x:Key="CategoryButtonColorConverter"/>
+            <converters:AnswerStateToColorConverter x:Key="AnswerStateToColorConverter"/>
+            <converters:CorrectToFeedbackTextConverter x:Key="CorrectToFeedbackTextConverter"/>
+            <converters:CorrectToFeedbackColorConverter x:Key="CorrectToFeedbackColorConverter"/>
 
 
 
@@ -57,6 +60,10 @@
             <converters:StringToIntConverter x:Key="StringToIntConverter"/>
             <converters:QuestionTypeToVietnameseConverter x:Key="QuestionTypeToVietnameseConverter"/>
             <converters:MultipleChoiceVisibilityConverter x:Key="MultipleChoiceVisibilityConverter"/>
+            <converters:CompletedToColorConverter x:Key="CompletedToColorConverter" />
+            <converters:StatusToIconConverter x:Key="StatusToIconConverter" />
+            <converters:LearnButtonTextConverter x:Key="LearnButtonTextConverter" />
+            <converters:UnlockToButtonColorConverter x:Key="UnlockToButtonColorConverter" />
 
 
 
